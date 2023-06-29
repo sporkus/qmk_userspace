@@ -5,6 +5,8 @@ on:
     paths: 
       - 'keyboards/**'
       - 'keymaps/*'
+      - '.github/workflows/*'
+      - '*.def' 
       - '*.c' 
       - '*.h' 
 
