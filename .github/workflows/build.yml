@@ -40,6 +40,9 @@ jobs:
     - name: Setup safe directory
       run: git config --global --add safe.directory '*'
 
+    - name: Install rsync
+      run:  apt-get update; apt-get install -y rsync
+
     - name: Copy users/keyboards/* to keyboards/*
       run: rsync -av ${{ env.QMK_USER }}/keyboards/ keyboards/
 
