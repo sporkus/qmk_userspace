@@ -40,5 +40,9 @@
 # include "keymaps/le_chiffre_32_layout.h"
 #endif
 
+#ifdef KEYBOARD_weteor_kong_mx
+# include "keymaps/kong_mx.h"
+#endif
+
 #endif
 
