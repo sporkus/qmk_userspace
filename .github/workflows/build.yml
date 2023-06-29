@@ -1,0 +1,57 @@
+name: Userspace Build
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Userspace build
+    runs-on: ubuntu-latest
+    container: qmkfm/qmk_cli
+
+    steps:
+    - name: Checkout QMK
+      uses: actions/checkout@v3.5.3
+      with:
+        repository: qmk/qmk_firmware
+        ref: develop
+        submodules: true
+
+    - name: Checkout userspace
+      uses: actions/checkout@v3.5.3
+      with:
+        path: qmk_userspace
+        persist-credentials: false
+
+    - name: Setup safe directory
+      run: git config --global --add safe.directory '*'
+
+    - name: Hello
+      run: ls /qmk_firmware; ls /qmk_userspace
+      shell: sh
+
+        #    - name: Compile
+        #      env:
+        #        conv: ${{ matrix.conv }}
+        #        split: ${{ matrix.split }}
+        #        path: users/${{ github.actor }}/keymaps
+        #      run: >
+        #        qmk -v compile -j 3 $path/${{ matrix.keyboard }}.json
+        #        ${conv:+-e CONVERT_TO=$conv} ${split:+-e SPLIT=$split}
+        #        -e TARGET=${{ matrix.keyboard }}${conv:+_$conv}${split:+_$split}
+        #
+        #    - name: Archive firmware
+        #      uses: actions/upload-artifact@v3.1.2
+        #      with:
+        #        retention-days: 60
+        #        name: ${{ matrix.keyboard }}_${{ matrix.conv }}
+        #        path: |
+        #          *.hex
+        #          *.bin
+        #          *.uf2
+        #
+        #  purge:
+        #    uses: filterpaper/scripts/.github/workflows/purge-workflow.yml@main
+        #    with:
+        #      purge-age: 5
+        #      delete-all-completed: false
+        #      delete-all-incomplete: false
