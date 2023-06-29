@@ -1,0 +1,5 @@
+//KEY_OVERRIDE(name,    mod_mask,       keycode, modded_keycode
+KEY_OVERRIDE(rcbr_lcbr, MOD_MASK_SHIFT, KC_RCBR, KC_LCBR)
+KEY_OVERRIDE(rprn_lprn, MOD_MASK_SHIFT, KC_RPRN, KC_LPRN)
+KEY_OVERRIDE(rbrc_lbrc, MOD_MASK_SHIFT, KC_RBRC, KC_LBRC)
+KEY_OVERRIDE(gt_lt,     MOD_MASK_SHIFT, KC_GT,   KC_LT)

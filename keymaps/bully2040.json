@@ -1,0 +1,11 @@
+{
+    "keyboard": "sporkus/bully2040",
+    "keymap": "sporkus",
+    "layout": "LAYOUT_w",
+    "layers": [
+        ["BULLY_BASE"],
+        ["BULLY_NUM"],
+        ["BULLY_NAV"],
+        ["BULLY_FN"]
+    ]
+}

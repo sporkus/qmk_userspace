@@ -1,0 +1,43 @@
+//name,        output,    term, keys
+
+//horizontal
+CMB(ENTER,     KC_ENTER,  25, HM_J,    HM_K)
+CMB(TAB,       KC_TAB,    25, HM_D,    HM_F)
+CMB(ESC,       KC_ESC,    25, HM_S,    HM_D)
+CMB(BSPC,      KC_BSPC,   25, HM_K,    HM_L)
+CMB(BSPC2,     KC_BSPC,   25, KC_I,    KC_O)
+CMB(PRCR,      KC_PSCR,   20, HM_S,    HM_D, HM_F)
+CMB(BOOT,      QK_BOOT,   5,  KC_Q,    KC_W, KC_O, KC_P)
+CMB(DM_REC1,   DM_REC1,   10, KC_Q,    KC_W)
+CMB(DM_PLAY1,  DM_PLY1,   10, KC_Q,    KC_W, KC_E)
+
+//left vertical
+CMB(LBRC,      KC_LBRC,   80, KC_W,    HM_S)
+CMB(LCBR,      KC_LCBR,   80, KC_E,    HM_D)
+CMB(LPRN,      KC_LPRN,   80, KC_R,    HM_F)
+CMB(LT,        KC_LT,     80, KC_T,    KC_G)
+CMB(ENTER2,    KC_ENTER,  40, KC_BSPC, KC_SCLN)
+
+//left vertical bottom
+CMB(WIN_UNDO,  C(KC_Z),   30, HM_A,    KC_Z)
+CMB(WIN_CUT,   C(KC_X),   30, HM_S,    KC_X)
+CMB(WIN_COPY,  C(KC_INS), 30, HM_D,    KC_C)
+CMB(WIN_PASTE, S(KC_INS), 30, HM_F,    KC_V)
+
+//right vertical bottom
+CMB(MEDIA_PRV, KC_MPRV,   30, KC_H,    KC_N)
+CMB(VOLD,      KC_VOLD,   30, HM_J,    KC_M)
+CMB(VOLU,      KC_VOLU,   30, HM_K,    KC_COMM)
+CMB(MEDIA_NXT, KC_MNXT,   30, HM_L,    KC_DOT)
+
+//vertical
+CMB(GT,        KC_GT,     80, KC_Y,    KC_H)
+CMB(RPRN,      KC_RPRN,   80, KC_U,    HM_J)
+CMB(RCBR,      KC_RCBR,   80, KC_I,    HM_K)
+CMB(RBRC,      KC_RBRC,   80, KC_O,    HM_L)
+
+// Layout key reference
+//  KC_Q | KC_W | KC_E | KC_R | KC_T      ||     KC_Y | KC_U |  KC_I   |  KC_O  |  KC_P   |
+//  KC_A | KC_S | KC_D | KC_F | KC_G      ||     KC_H | KC_J |  KC_K   |  KC_L  | KC_QUOT |
+//  KC_Z | KC_X | KC_C | KC_V | KC_B      ||     KC_N | KC_M | KC_COMM | KC_DOT | KC_SLSH |
+//                     NAV_SPC| NUM_SPC   ||   NAV_SPC| NUM_SPC

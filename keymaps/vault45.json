@@ -1,0 +1,11 @@
+{
+    "keyboard": "projectcain/vault45",
+    "keymap": "sporkus",
+    "layout": "LAYOUT_split_4space_w",
+    "layers": [
+        [ "V45_BASE" ],
+        [ "V45_NUM" ],
+        [ "V45_NAV" ],
+        [ "V45_FN" ]
+    ]
+}
