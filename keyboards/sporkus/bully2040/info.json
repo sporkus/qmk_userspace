@@ -81,5 +81,9 @@
                 { "matrix": [3, 11], "w": 1.25, "x": 12.25, "y": 3.0 }
             ]
         }
+    },
+    "bootmagic": {
+        "enabled": true,
+        "matrix": [0, 0]
     }
 }
