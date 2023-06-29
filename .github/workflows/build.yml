@@ -1,57 +1,55 @@
 name: Userspace Build
 on:
   workflow_dispatch:
+  push:
+    paths: 
+      - 'keyboards/**'
+      - 'keymaps/*'
+      - '*.c' 
+      - '*.h' 
+
 
 jobs:
   build:
     name: Userspace build
     runs-on: ubuntu-latest
     container: qmkfm/qmk_cli
+    env: 
+      QMK_USER: users/${{ github.actor }}
+      USER_KEYMAPS: users/${{ github.actor }}/keymaps
 
+    # by default, checks out to github.workspace
+    # github.workspace will also be qmk_firmware root
     steps:
     - name: Checkout QMK
       uses: actions/checkout@v3.5.3
       with:
         repository: qmk/qmk_firmware
-        ref: develop
+        ref: master
         submodules: true
 
+    # path is relative to github.workspace
     - name: Checkout userspace
       uses: actions/checkout@v3.5.3
       with:
-        path: qmk_userspace
+        path: ${{ env.QMK_USER }}
         persist-credentials: false
 
     - name: Setup safe directory
       run: git config --global --add safe.directory '*'
 
-    - name: Hello
-      run: ls /qmk_firmware; ls /qmk_userspace
-      shell: sh
+    - name: Copy users/keyboards/[user] to keyboards/[user] 
+      run: cp -r ${{ env.QMK_USER }}/keyboards/${{ github.actor }} keyboards/${{ github.actor }}
 
-        #    - name: Compile
-        #      env:
-        #        conv: ${{ matrix.conv }}
-        #        split: ${{ matrix.split }}
-        #        path: users/${{ github.actor }}/keymaps
-        #      run: >
-        #        qmk -v compile -j 3 $path/${{ matrix.keyboard }}.json
-        #        ${conv:+-e CONVERT_TO=$conv} ${split:+-e SPLIT=$split}
-        #        -e TARGET=${{ matrix.keyboard }}${conv:+_$conv}${split:+_$split}
-        #
-        #    - name: Archive firmware
-        #      uses: actions/upload-artifact@v3.1.2
-        #      with:
-        #        retention-days: 60
-        #        name: ${{ matrix.keyboard }}_${{ matrix.conv }}
-        #        path: |
-        #          *.hex
-        #          *.bin
-        #          *.uf2
-        #
-        #  purge:
-        #    uses: filterpaper/scripts/.github/workflows/purge-workflow.yml@main
-        #    with:
-        #      purge-age: 5
-        #      delete-all-completed: false
-        #      delete-all-incomplete: false
+    - name: Compile 
+      run: for kb in $(ls ${{ env.USER_KEYMAPS }}/*.json); do qmk compile -j 3 $kb -km ${{ github.actor }}; done
+    
+    - name: Archive firmware
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        retention-days: 60
+        name: qmk_firmware 
+        path: |
+          *.hex
+          *.bin
+          *.uf2
