@@ -12,14 +12,13 @@ on:
 
 
 jobs:
-  env:
-    QMK_USER: users/${{ github.actor }}
-    USER_KEYMAPS: users/${{ github.actor }}/keymaps
-
   list-user-keymaps:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+    env:
+      QMK_USER: users/${{ github.actor }}
+      USER_KEYMAPS: users/${{ github.actor }}/keymaps
     steps:
       - uses: actions/checkout@v2
         with:
@@ -37,6 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
+    env:
+      QMK_USER: users/${{ github.actor }}
+      USER_KEYMAPS: users/${{ github.actor }}/keymaps
 
     # by default, checks out to github.workspace
     # github.workspace will also be qmk_firmware root
