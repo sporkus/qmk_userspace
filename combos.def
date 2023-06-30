@@ -1,15 +1,20 @@
 //name,        output,    term, keys
 
-//horizontal
+//horizontal top
+CMB(TAB2,      KC_TAB,      25, KC_Q,    KC_W)
+CMB(BSPC2,     KC_BSPC,    25, KC_O,    KC_P)
+CMB(DEL_WORD,  C(KC_BSPC),  25, KC_I,    KC_O)
+CMB(BOOT,      QK_BOOT,     5,  KC_Q,    KC_W, KC_O, KC_P)
+
+//horizontal middle
 CMB(ENTER,     KC_ENTER,    25, HM_J,    HM_K)
 CMB(TAB,       KC_TAB,      25, HM_D,    HM_F)
 CMB(ESC,       KC_ESC,      25, HM_S,    HM_D)
 CMB(BSPC,      KC_BSPC,     25, HM_K,    HM_L)
-CMB(DEL_WORD,  C(KC_BSPC),  25, KC_I,    KC_O)
-CMB(PRCR,      KC_PSCR,     20, HM_S,    HM_D, HM_F)
-CMB(BOOT,      QK_BOOT,     5,  KC_Q,    KC_W, KC_O, KC_P)
-CMB(DM_REC1,   DM_REC1,     10, KC_Q,    KC_W)
-CMB(DM_PLAY1,  DM_PLY1,     10, KC_Q,    KC_W, KC_E)
+
+//horizontal bottom
+CMB(ENTER2,    KC_ENT,      25, KC_DOT,  KC_SLSH)
+CMB(ENTER3,    KC_ENT,      25, KC_DOT,  MT_SLSH)
 
 //left vertical
 CMB(LBRC,      KC_LBRC,     80, KC_W,    HM_S)
