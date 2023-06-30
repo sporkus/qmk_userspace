@@ -21,18 +21,17 @@ jobs:
         with:
           path: ${{ env.QMK_USER }}
       - id: set-matrix
-        run: echo "matrix=$(ls keymaps/*.json | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "matrix=$(ls keymaps/*.json | jq -R -s -c 'split(\n)[:-1]')"
 
 
   build:
     name: Userspace build
     runs-on: ubuntu-latest
     container: qmkfm/qmk_cli
-    needs: list-user-keymaps
     strategy:
       fail-fast: false
       matrix:
-        keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
+        keymaps: ${{ needs.list-user-keymaps.outputs.matrix }}
     env:
       USERSPACE_PATH: users/${{ github.actor }}
 
