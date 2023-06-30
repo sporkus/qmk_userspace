@@ -22,16 +22,12 @@
         "device_version": "0.1.0"
     },
     "features": {
-        "bootmagic": true,
+        "bootmagic": false,
         "extrakey": true,
         "command": false,
         "console": false,
         "mousekey": false,
         "nkro": true,
-    },
-    "bootmagic": {
-        "enabled": true,
-        "matrix": [0, 0]
     },
     "layouts": {
         "LAYOUT_3x1u": {
