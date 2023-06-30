@@ -24,8 +24,7 @@ jobs:
         run: echo "matrix=$(ls keymaps/*.json | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
 
-  build:
-    name: Userspace build
+  compile-userpace-keymaps:
     runs-on: ubuntu-latest
     container: qmkfm/qmk_cli
     needs: list-user-keymaps
