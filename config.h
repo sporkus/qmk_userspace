@@ -33,7 +33,7 @@
 #endif
 
 #ifdef KEYBOARD_sporkus_bully2040
-# include "keymaps/bully2040_layout.h"
+# include "keymaps/bully2040.h"
 #endif
 
 #ifdef KEYBOARD_sporkus_le_chiffre_32

@@ -9,6 +9,8 @@ bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
         case NAV_ESC:
         case NUM_SPC:
         case SFT_ENT:
+        case SFT_Z:
+        case SFT_SLSH:
             // Immediately select the hold action when another key is pressed.
             return true;
         default:
