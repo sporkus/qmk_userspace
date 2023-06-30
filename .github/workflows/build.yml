@@ -50,7 +50,7 @@ jobs:
     - name: Checkout userspace
       uses: actions/checkout@v3.5.3
       with:
-        path: ${{ env.QMK_USER }}
+        path: ${{ env.USERSPACE_PATH }}
         persist-credentials: false
 
     - name: Setup safe directory
