@@ -12,13 +12,31 @@ on:
 
 
 jobs:
+  env:
+    QMK_USER: users/${{ github.actor }}
+    USER_KEYMAPS: users/${{ github.actor }}/keymaps
+
+  list-user-keymaps:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: ${{ env.QMK_USER }}
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls $USER_KEYMAPS/*.yml | jq -R -s -c 'split("\n")[:-1]')"
+
+
   build:
     name: Userspace build
     runs-on: ubuntu-latest
     container: qmkfm/qmk_cli
-    env:
-      QMK_USER: users/${{ github.actor }}
-      USER_KEYMAPS: users/${{ github.actor }}/keymaps
+    needs: list-user-keymaps
+    strategy:
+      fail-fast: false
+      matrix:
+        keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
 
     # by default, checks out to github.workspace
     # github.workspace will also be qmk_firmware root
@@ -46,8 +64,8 @@ jobs:
     - name: Copy users/keyboards/* to keyboards/*
       run: rsync -av ${{ env.QMK_USER }}/keyboards/ keyboards/
 
-    - name: Compile
-      run: for kb in $(ls ${{ env.USER_KEYMAPS }}/*.json); do qmk compile -j 3 $kb -km ${{ github.actor }}; done
+    - name: QMK compile
+      run: qmk compile -j 3 ${{ matrix.keymaps }}
 
     - name: Archive firmware
       uses: actions/upload-artifact@v3.1.2
