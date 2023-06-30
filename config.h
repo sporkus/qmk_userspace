@@ -24,12 +24,8 @@
 // Layout macros
 #ifndef __ASSEMBLER__
 
-#ifdef KEYBOARD_projectcain_vault45
-# include "keymaps/vault45_layout.h"
-#endif
-
 #ifdef KEYBOARD_mkh_studio_bully
-# include "keymaps/bully_layout.h"
+# include "keymaps/bully.h"
 #endif
 
 #ifdef KEYBOARD_sporkus_bully2040
@@ -37,7 +33,7 @@
 #endif
 
 #ifdef KEYBOARD_sporkus_le_chiffre_32
-# include "keymaps/le_chiffre_32_layout.h"
+# include "keymaps/le_chiffre_32.h"
 #endif
 
 #ifdef KEYBOARD_weteor_kong_mx
