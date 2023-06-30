@@ -21,7 +21,7 @@ jobs:
         with:
           path: ${{ env.QMK_USER }}
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(ls keymaps/*.json | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "matrix=$(ls keymaps/*.json | jq -R -s -c 'split(\"\n\")[:-1]')"
 
 
   build:
@@ -60,7 +60,7 @@ jobs:
       run:  apt-get update; apt-get install -y rsync
 
     - name: Copy users/keyboards/* to keyboards/*
-      run: rsync -av ${{ env.QMK_USER }}/keyboards/ keyboards/
+      run: rsync -av ${{ env.USERSPACE_PATH }}/keyboards/ keyboards/
 
     - name: QMK compile
       run: qmk compile -j 3 ${{ env.USERSPACE_PATH }}/${{ matrix.keymaps }}
