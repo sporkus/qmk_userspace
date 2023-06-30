@@ -16,15 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-    env:
-      QMK_USER: users/${{ github.actor }}
-      USER_KEYMAPS: users/${{ github.actor }}/keymaps
     steps:
       - uses: actions/checkout@v2
         with:
           path: ${{ env.QMK_USER }}
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(ls $USER_KEYMAPS/*.yml | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "::set-output name=matrix::$(ls keymaps/*.json | jq -R -s -c 'split("\n")[:-1]')"
 
 
   build:
@@ -37,8 +34,7 @@ jobs:
       matrix:
         keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
     env:
-      QMK_USER: users/${{ github.actor }}
-      USER_KEYMAPS: users/${{ github.actor }}/keymaps
+      USERSPACE_PATH: users/${{ github.actor }}
 
     # by default, checks out to github.workspace
     # github.workspace will also be qmk_firmware root
@@ -67,7 +63,7 @@ jobs:
       run: rsync -av ${{ env.QMK_USER }}/keyboards/ keyboards/
 
     - name: QMK compile
-      run: qmk compile -j 3 ${{ matrix.keymaps }}
+      run: qmk compile -j 3 ${{ env.USERSPACE_PATH }}/${{ matrix.keymaps }}
 
     - name: Archive firmware
       uses: actions/upload-artifact@v3.1.2
