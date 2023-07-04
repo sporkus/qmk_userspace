@@ -1,6 +1,6 @@
 {
     "keyboard_name": "le chiffre 32",
-    "manufacturer": "no numbers, no master",
+    "manufacturer": "no numbers no master",
     "url": "https://github.com/sporkus/le_chiffre_keyboard_stm32",
     "maintainer": "sporkus",
     "usb": {
