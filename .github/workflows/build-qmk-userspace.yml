@@ -1,4 +1,4 @@
-name: Userspace Build
+name: QMK userspace Build
 on:
   workflow_dispatch:
   push:
@@ -65,64 +65,6 @@ jobs:
       with:
         retention-days: 60
         name: qmk_user_firmware
-        path: |
-          *.hex
-          *.bin
-          *.uf2
-
-# -------------------------
-
-  list-vial-keyboards:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v2
-      - id: set-matrix
-        run: echo "matrix=$(find keyboards -type d -name vial | sed 's/keyboards\///' | sed 's/\/keymaps.*//' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
-
-  compile-vial:
-    runs-on: ubuntu-latest
-    container: qmkfm/qmk_cli
-    needs: list-vial-keyboards
-    strategy:
-      fail-fast: false
-      matrix:
-        keyboards: ${{ fromJson(needs.list-vial-keyboards.outputs.matrix) }}
-    env:
-      USERSPACE_PATH: users/${{ github.actor }}
-
-    steps:
-    - name: Checkout VIAL QMK
-      uses: actions/checkout@v3.5.3
-      with:
-        repository: vial-kb/vial-qmk
-        ref: vial
-        submodules: true
-
-    - name: Checkout userspace
-      uses: actions/checkout@v3.5.3
-      with:
-        path: ${{ env.USERSPACE_PATH }}
-        persist-credentials: false
-
-    - name: Setup safe directory
-      run: git config --global --add safe.directory '*'
-
-    - name: Install rsync
-      run:  apt-get update; apt-get install -y rsync
-
-    - name: Copy users/keyboards/* to keyboards/*
-      run: rsync -av ${{ env.USERSPACE_PATH }}/keyboards/ keyboards/
-
-    - name: compile vial
-      run: make ${{ matrix.keyboards }}:vial
-
-    - name: Archive firmware
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        retention-days: 60
-        name: vial_firmware
         path: |
           *.hex
           *.bin
