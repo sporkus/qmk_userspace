@@ -2,8 +2,8 @@
 
 //horizontal top
 CMB(TAB2,      KC_TAB,      25, KC_Q,    KC_W)
-CMB(BSPC2,     KC_BSPC,    25, KC_O,    KC_P)
-CMB(DEL_WORD,  C(KC_BSPC),  25, KC_I,    KC_O)
+CMB(BSPC2,     KC_BSPC,     15, KC_O,    KC_P)
+CMB(DEL_WORD,  C(KC_BSPC),  15, KC_I,    KC_O)
 CMB(BOOT,      QK_BOOT,     5,  KC_Q,    KC_W, KC_O, KC_P)
 
 //horizontal middle
