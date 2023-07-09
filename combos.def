@@ -10,6 +10,7 @@ CMB(ENTER,     KC_ENTER,    25, HM_J,    HM_K)
 CMB(TAB,       KC_TAB,      25, HM_D,    HM_F)
 CMB(ESC,       KC_ESC,      25, HM_S,    HM_D)
 CMB(BSPC,      KC_BSPC,     25, HM_K,    HM_L)
+CMB(PRCR,      KC_PSCR,     20, HM_S,    HM_D, HM_F)
 
 //horizontal bottom
 CMB(ENTER2,    KC_ENT,      25, KC_DOT,  KC_SLSH)
