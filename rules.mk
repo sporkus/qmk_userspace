@@ -1,10 +1,5 @@
-# Disable unused features
-MAGIC_ENABLE = no
-UNICODE_ENABLE = no
-SPACE_CADET_ENABLE = no
-
 # Enable common features
-CONSOLE_ENABLE = no
+CONSOLE_ENABLE = yes
 CAPS_WORD_ENABLE = yes
 COMBO_ENABLE = yes
 EXTRAKEY_ENABLE = yes
