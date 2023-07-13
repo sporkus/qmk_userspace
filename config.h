@@ -32,10 +32,6 @@
 # include "keymaps/bully2040.h"
 #endif
 
-#ifdef KEYBOARD_sporkus_le_chiffre_32
-# include "keymaps/le_chiffre_32.h"
-#endif
-
 #ifdef KEYBOARD_weteor_kong_mx
 # include "keymaps/kong_mx.h"
 #endif
