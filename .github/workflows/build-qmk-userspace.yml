@@ -18,7 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: set-matrix
-        run: echo "matrix=$(ls keymaps/*.json | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+        run: echo "matrix=$(find keyboards -regex ".*keymaps" | sed "s|keyboards/\(.*\)/keymaps|\1|"| jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+      - run: echo $GITHUB_OUTPUT
 
   compile-userpace-keymaps:
     runs-on: ubuntu-latest
@@ -27,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
+        keyboards: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
     env:
       USERSPACE_PATH: users/${{ github.actor }}
 
@@ -58,7 +59,7 @@ jobs:
       run: rsync -av ${{ env.USERSPACE_PATH }}/keyboards/ keyboards/
 
     - name: QMK compile
-      run: qmk compile -j 3 ${{ env.USERSPACE_PATH }}/${{ matrix.keymaps }}
+      run: qmk compile -j 0 -kb ${{ matrix.keyboards }} -km ${{ github.actor }}
 
     - name: Archive firmware
       uses: actions/upload-artifact@v3.1.2

@@ -21,20 +21,3 @@
 #	define COMBO_ONLY_FROM_LAYER 0
 #endif
 
-// Layout macros
-#ifndef __ASSEMBLER__
-
-#ifdef KEYBOARD_mkh_studio_bully
-# include "keymaps/bully.h"
-#endif
-
-#ifdef KEYBOARD_sporkus_bully2040
-# include "keymaps/bully2040.h"
-#endif
-
-#ifdef KEYBOARD_weteor_kong_mx
-# include "keymaps/kong_mx.h"
-#endif
-
-#endif
-
