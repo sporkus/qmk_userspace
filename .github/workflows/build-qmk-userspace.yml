@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keymaps: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
+        keyboards: ${{ fromJson(needs.list-user-keymaps.outputs.matrix) }}
     env:
       USERSPACE_PATH: users/${{ github.actor }}
 
@@ -58,7 +58,7 @@ jobs:
       run: rsync -av ${{ env.USERSPACE_PATH }}/keyboards/ keyboards/
 
     - name: QMK compile
-      run: qmk compile -j 3 ${{ env.USERSPACE_PATH }}/${{ matrix.keymaps }}
+      run: qmk compile -j 0 -kb ${{ matrix.keyboards }} -km ${{ github.actor }}
 
     - name: Archive firmware
       uses: actions/upload-artifact@v3.1.2
