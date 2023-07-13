@@ -47,7 +47,7 @@ uint16_t get_global_quick_tap_ms(uint16_t keycode, keyrecord_t* record) {
 // return false to interrupt normal processing
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     #ifdef CONSOLE_ENABLE
-        uprintf("[%u, %u] kc: 0x%04X, pressed: %X, time: %5u, int: %u, tap.count: %u",
+        uprintf("[%u, %u] kc: 0x%04X, pressed: %X, time: %5u, int: %u, tap.count: %u\n",
                 record->event.key.row, record->event.key.col, keycode,  record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
     #endif
 
