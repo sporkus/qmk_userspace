@@ -71,17 +71,9 @@ void set_rgb_matrix_indicators(uint8_t led_min, uint8_t led_max) {
     #endif
 }
 
-#ifndef VIAL_ENABLE
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     set_rgb_matrix_indicators(led_min, led_max);
     return false;
 }
-#endif
-
-#ifdef VIAL_ENABLE
-void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    set_rgb_matrix_indicators(led_min, led_max);
-}
-#endif
 
 #endif
