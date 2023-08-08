@@ -48,8 +48,8 @@ static inline void disable_mux_all(void) {
     }
 }
 
-static inline void enable_mux(uint8_t mux) {
-    writePinLow(mux);
+static inline void enable_mux(uint8_t index) {
+    writePinLow(mux_en_pins[index]);
 }
 
 static inline void select_col(uint8_t col) {
@@ -60,7 +60,8 @@ static inline void select_col(uint8_t col) {
     writePin(mux_sel_pins[1], ch & 2);
     writePin(mux_sel_pins[2], ch & 4);
 
-    enable_mux(ch & 8);
+    uint8_t mux_index = ((ch & (1<<3)) != 0);
+    enable_mux(mux_index);
 }
 
 static inline void init_row(void) {
@@ -112,7 +113,7 @@ uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
 
     select_col(col);
     // Set strobe pins to low state
-    /* writePinLow(row_pins[row]); */
+    writePinLow(row_pins[row]);
     ATOMIC_BLOCK_FORCEON {
         // Set the row/strobe pin high
         charge_capacitor(row);

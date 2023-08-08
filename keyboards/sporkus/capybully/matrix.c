@@ -16,6 +16,7 @@
 
 #include "ec_switch_matrix.h"
 #include "matrix.h"
+#include "print.h"
 
 /* matrix state(1:on, 0:off) */
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
@@ -25,7 +26,6 @@ void matrix_init_custom(void) {
     // Default values, overwritten by VIA if enabled later
     ecsm_config.ecsm_actuation_threshold = DEFAULT_ACTUATION_LEVEL;
     ecsm_config.ecsm_release_threshold   = DEFAULT_RELEASE_LEVEL;
-
     ecsm_init(&ecsm_config);
 }
 
@@ -40,5 +40,6 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
         ecsm_print_matrix();
     }
 #endif
+
     return updated;
 }
