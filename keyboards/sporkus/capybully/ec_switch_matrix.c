@@ -26,10 +26,10 @@ const uint8_t  col_channels[] = MATRIX_COL_CHANNELS;
 const uint32_t mux_sel_pins[] = MUX_SEL_PINS;
 const uint32_t mux_en_pins[] =  MUX_EN_PINS;
 
-static ecsm_config_t config;
-static uint16_t      ecsm_sw_value[MATRIX_ROWS][MATRIX_COLS];
-
 static adc_mux adcMux;
+static uint16_t ecsm_sw_value[MATRIX_ROWS][MATRIX_COLS];
+static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS];
+
 
 static inline void discharge_capacitor(void) {
     writePinLow(DISCHARGE_PIN);
@@ -82,9 +82,14 @@ static inline void init_mux(void) {
 }
 
 /* Initialize the peripherals pins */
-int ecsm_init(ecsm_config_t const* const ecsm_config) {
-    // Initialize config
-    config = *ecsm_config;
+int ecsm_init(void) {
+    // Default values, overwritten by VIA if enabled later
+    for (int i = 0; i < MATRIX_ROWS; i++) {
+        for (int j = 0; j < MATRIX_COLS; j++) {
+            ecsm_threshold[i][j].actuation = DEFAULT_ACTUATION_LEVEL;
+            ecsm_threshold[i][j].release = DEFAULT_RELEASE_LEVEL;
+        }
+    }
 
     palSetLineMode(ANALOG_PORT, PAL_MODE_INPUT_ANALOG);
     adcMux = pinToMux(ANALOG_PORT);
@@ -98,12 +103,6 @@ int ecsm_init(ecsm_config_t const* const ecsm_config) {
 
     init_row();
     init_mux();
-    return 0;
-}
-
-int ecsm_update(ecsm_config_t const* const ecsm_config) {
-    // Save config
-    config = *ecsm_config;
     return 0;
 }
 
@@ -129,13 +128,13 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
     bool current_state = (*current_row >> col) & 1;
 
     // Press to release
-    if (current_state && sw_value < config.ecsm_actuation_threshold) {
+    if (current_state && sw_value < ecsm_threshold[row][col].actuation) {
         *current_row &= ~(1 << col);
         return true;
     }
 
     // Release to press
-    if ((!current_state) && sw_value > config.ecsm_release_threshold) {
+    if ((!current_state) && sw_value > ecsm_threshold[row][col].release) {
         *current_row |= (1 << col);
         return true;
     }
@@ -161,7 +160,7 @@ void ecsm_print_matrix(void) {
 bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
     bool updated = false;
 
-    for (int col = 0; col < sizeof(col_channels); col++) {
+    for (int col = 0; col < MATRIX_COLS; col++) {
         for (int row = 0; row < MATRIX_ROWS; row++) {
             ecsm_sw_value[row][col] = ecsm_readkey_raw(row, col);
             updated |= ecsm_update_key(&current_matrix[row], row, col, ecsm_sw_value[row][col]);

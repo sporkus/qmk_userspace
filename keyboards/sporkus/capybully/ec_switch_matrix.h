@@ -22,14 +22,18 @@
 #include "matrix.h"
 
 typedef struct {
-    uint16_t ecsm_actuation_threshold; // threshold for key release
-    uint16_t ecsm_release_threshold;   // threshold for key press
-} ecsm_config_t;
+    uint16_t actuation; // threshold for key release
+    uint16_t release;   // threshold for key press
+} ecsm_threshold_t;
 
-ecsm_config_t ecsm_config;
+typedef struct {
+    uint16_t adc_readings[30];  // hold the last 30 readings
+    uint16_t adc_max;
+    uint16_t adc_median;
+} ecsm_tune_data_t;
 
-int      ecsm_init(ecsm_config_t const* const ecsm_config);
-int      ecsm_update(ecsm_config_t const* const ecsm_config);
+
+int      ecsm_init(void);
 bool     ecsm_matrix_scan(matrix_row_t current_matrix[]);
 uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col);
 bool     ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16_t sw_value);
