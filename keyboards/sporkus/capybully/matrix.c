@@ -23,10 +23,7 @@ extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
 extern matrix_row_t matrix[MATRIX_ROWS];     // debounced values
 
 void matrix_init_custom(void) {
-    // Default values, overwritten by VIA if enabled later
-    ecsm_config.ecsm_actuation_threshold = DEFAULT_ACTUATION_LEVEL;
-    ecsm_config.ecsm_release_threshold   = DEFAULT_RELEASE_LEVEL;
-    ecsm_init(&ecsm_config);
+    ecsm_init();
 }
 
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {
@@ -35,7 +32,7 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
 // RAW matrix values on console
 #ifdef CONSOLE_ENABLE
     static int cnt = 0;
-    if (cnt++ == 1000) {
+    if (cnt++ == 500) {
         cnt = 0;
         ecsm_print_matrix();
     }
