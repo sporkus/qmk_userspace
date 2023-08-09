@@ -35,7 +35,7 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
 // RAW matrix values on console
 #ifdef CONSOLE_ENABLE
     static int cnt = 0;
-    if (cnt++ == 350) {
+    if (cnt++ == 1000) {
         cnt = 0;
         ecsm_print_matrix();
     }
