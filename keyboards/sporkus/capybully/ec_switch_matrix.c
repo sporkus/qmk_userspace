@@ -60,7 +60,7 @@ static inline void select_col(uint8_t col) {
     writePin(mux_sel_pins[1], ch & 2);
     writePin(mux_sel_pins[2], ch & 4);
 
-    uint8_t mux_index = ((ch & (1<<3)) != 0);
+    uint8_t mux_index = (ch & 8) ? 1 : 0;
     enable_mux(mux_index);
 }
 
@@ -115,15 +115,12 @@ uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
     // Set strobe pins to low state
     writePinLow(row_pins[row]);
     ATOMIC_BLOCK_FORCEON {
-        // Set the row/strobe pin high
         charge_capacitor(row);
         sw_value = adc_read(adcMux);
     }
-    // reset strobe pin
+    // reset sensor
     writePinLow(row_pins[row]);
-    // Discharge peak hold capacitor
     discharge_capacitor();
-
     return sw_value;
 }
 
@@ -146,6 +143,20 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
     return false;
 }
 
+// Debug print key values
+void ecsm_print_matrix(void) {
+    for (int row = 0; row < MATRIX_ROWS; row++) {
+        for (int col = 0; col < MATRIX_COLS; col++) {
+            uprintf("adc_readings, %u, %u, ", row, col);
+            uprintf("%d\n", ecsm_sw_value[row][col]);
+            /* if (col < (MATRIX_COLS - 1)) { */
+            /*     print(","); */
+            /* } */
+        }
+    }
+    print("\n");
+}
+
 // Scan key values and update matrix state
 bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
     bool updated = false;
@@ -158,18 +169,4 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
     }
 
     return updated;
-}
-
-// Debug print key values
-void ecsm_print_matrix(void) {
-    for (int row = 0; row < MATRIX_ROWS; row++) {
-        for (int col = 0; col < MATRIX_COLS; col++) {
-            uprintf("%4d", ecsm_sw_value[row][col]);
-            if (col < (MATRIX_COLS - 1)) {
-                print(",");
-            }
-        }
-        print("\n");
-    }
-    print("\n");
 }
