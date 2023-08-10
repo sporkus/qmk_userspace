@@ -26,7 +26,7 @@ typedef struct {
 } ecsm_threshold_t;
 
 typedef struct {
-    uint16_t low;  
+    uint16_t low;
     uint16_t high;
 } ecsm_tune_data_t;
 
@@ -40,5 +40,5 @@ bool     ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, ui
 void     ecsm_update_tune_data(uint16_t new_data, uint8_t, uint8_t col);
 void     ecsm_update_threshold(void);
 void     ecsm_print_tuning(void);
-void     ecsm_print_matrix(void);
-void     ecsm_print_thresholds(void);
+void     ecsm_print_matrix(matrix_row_t current_matrix[]);
+void     ecsm_print_thresholds(matrix_row_t current_matrix[]);

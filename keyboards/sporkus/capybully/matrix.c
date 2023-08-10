@@ -32,18 +32,21 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
 // RAW matrix values on console
     static int cnt = 0;
 
-    if (cnt % 10 == 0) {
+    if (cnt % ECSM_UPDATE_CYCLES == 0) {
         ecsm_update_tuning = true;
     }
 
-    if (cnt++ == 5000) {
+    if (cnt++ == 1000) {
         cnt = 0;
         ecsm_update_threshold();
 #ifdef CONSOLE_ENABLE
     #if !defined(ECSM_THRESHOLDS) || defined(PRINT_ECSM_THRESHOLDS)
-        ecsm_print_thresholds();
+        ecsm_print_thresholds(current_matrix);
     #endif
-        ecsm_print_matrix();
+
+    #ifdef PRINT_ECSM_READINGS
+        ecsm_print_matrix(current_matrix);
+    #endif
 #endif
     }
 

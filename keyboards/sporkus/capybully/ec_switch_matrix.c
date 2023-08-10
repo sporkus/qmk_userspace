@@ -33,9 +33,13 @@ static ecsm_tune_data_t ecsm_tune_data[MATRIX_ROWS][MATRIX_COLS];
 
 #ifdef ECSM_THRESHOLDS
 static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS] = ECSM_THRESHOLDS;
-#else 
+#else
 static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS];
 #endif
+
+/* fancy printing */
+const char* red = "\x1b[31m";
+const char* reset = "\x1b[0m";
 
 
 static inline void discharge_capacitor(void) {
@@ -133,8 +137,8 @@ void ecsm_update_tune_data(uint16_t new_value, uint8_t row, uint8_t col) {
 void ecsm_update_threshold(void) {
     for (int i = 0; i < MATRIX_ROWS; i++) {
         for (int j = 0; j < MATRIX_COLS; j++) {
-            uint16_t low = ecsm_tune_data[i][j].low; 
-            uint16_t high = ecsm_tune_data[i][j].high; 
+            uint16_t low = ecsm_tune_data[i][j].low;
+            uint16_t high = ecsm_tune_data[i][j].high;
             bool tune_data_changed = high > DEFAULT_HIGH_LEVEL && low > DEFAULT_LOW_LEVEL;
 
             if (tune_data_changed) {
@@ -187,7 +191,7 @@ void ecsm_print_tuning(void) {
     for (int row = MATRIX_ROWS - 1; row >= 0; row--) {
         for (int col = 0; col < MATRIX_COLS; col++) {
             if (ecsm_tune_data[row][col].low > DEFAULT_LOW_LEVEL) {
-                uprintf("ADC [%u, %u] current: %u; low: %u; high: %u, actuation: %u; release: %u\n", 
+                uprintf("ADC [%u, %u] current: %u; low: %u; high: %u, actuation: %u; release: %u\n",
                     row
                     , col
                     , ecsm_sw_value[row][col]
@@ -202,34 +206,43 @@ void ecsm_print_tuning(void) {
     print("--------------------------------------\n");
 }
 
-void ecsm_print_thresholds(void) {
+void ecsm_print_thresholds(matrix_row_t current_matrix[]) {
     uprintf("\n#define ECSM_THRESHOLDS {\\\n");
-    for (int row = 0; row < MATRIX_ROWS; row++) {
+    for (int i = 0; i < MATRIX_ROWS; i++) {
         uprintf("\t{");
-        for (int col = 0; col < MATRIX_COLS; col++) {
-            uprintf("{%u, %u}", 
-                ecsm_threshold[row][col].actuation
-                , ecsm_threshold[row][col].release
-            );
+        for (int j = 0; j < MATRIX_COLS; j++) {
+            bool key_pressed = (current_matrix[i] >> j) & 1;
 
-            if (col < MATRIX_COLS - 1) {
+            if (key_pressed) {
+                uprintf("{%s%u, %u%s}", red, ecsm_threshold[i][j].actuation , ecsm_threshold[i][j].release, reset);
+            } else {
+                uprintf("{%u, %u}", ecsm_threshold[i][j].actuation , ecsm_threshold[i][j].release);
+            }
+
+            if (j < MATRIX_COLS - 1) {
                 uprintf(", ");
             }
         }
-        if (row < MATRIX_ROWS - 1) {
+        if (i < MATRIX_ROWS - 1) {
             uprintf("},\\\n");
         } else {
             uprintf("}\\\n");
         }
     }
-    uprintf("}\n\n"); 
+    uprintf("}\n\n");
 }
 
-void ecsm_print_matrix(void) {
+void ecsm_print_matrix(matrix_row_t current_matrix[]) {
     for (int i = 0; i < MATRIX_ROWS; i++) {
         uprintf("[ADC readings], %u, ", i);
         for (int j = 0; j < MATRIX_COLS; j++) {
-            uprintf("%4u," , ecsm_sw_value[i][j]);
+            bool key_pressed = (current_matrix[i] >> j) & 1;
+
+            if (key_pressed) {
+                uprintf("%s%4u%s," , red, ecsm_sw_value[i][j], reset);
+            } else {
+                uprintf("%4u," , ecsm_sw_value[i][j]);
+            }
         }
         uprintf("\n");
     }
