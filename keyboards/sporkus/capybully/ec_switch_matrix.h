@@ -41,3 +41,4 @@ void     ecsm_update_tune_data(uint16_t new_data, uint8_t, uint8_t col);
 void     ecsm_update_threshold(void);
 void     ecsm_print_tuning(void);
 void     ecsm_print_matrix(void);
+void     ecsm_print_thresholds(void);

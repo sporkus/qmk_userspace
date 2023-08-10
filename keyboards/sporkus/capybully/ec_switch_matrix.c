@@ -29,8 +29,13 @@ const uint32_t mux_en_pins[] =  MUX_EN_PINS;
 bool ecsm_update_tuning = false;
 static adc_mux adcMux;
 static uint16_t ecsm_sw_value[MATRIX_ROWS][MATRIX_COLS];
-static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS];
 static ecsm_tune_data_t ecsm_tune_data[MATRIX_ROWS][MATRIX_COLS];
+
+#ifdef ECSM_THRESHOLDS
+static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS] = ECSM_THRESHOLDS;
+#else 
+static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS];
+#endif
 
 
 static inline void discharge_capacitor(void) {
@@ -91,8 +96,10 @@ int ecsm_init(void) {
     // Default values, overwritten by VIA if enabled later
     for (int i = 0; i < MATRIX_ROWS; i++) {
         for (int j = 0; j < MATRIX_COLS; j++) {
+            #ifndef ECSM_THRESHOLDS
             ecsm_threshold[i][j].actuation = DEFAULT_ACTUATION_LEVEL;
             ecsm_threshold[i][j].release = DEFAULT_RELEASE_LEVEL;
+            #endif
             ecsm_tune_data[i][j].low = DEFAULT_LOW_LEVEL;
             ecsm_tune_data[i][j].high = DEFAULT_ACTUATION_LEVEL;
         }
@@ -175,8 +182,8 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
     return false;
 }
 
-// Debug print key values
 void ecsm_print_tuning(void) {
+    uprintf("Threholds: \n");
     for (int row = MATRIX_ROWS - 1; row >= 0; row--) {
         for (int col = 0; col < MATRIX_COLS; col++) {
             if (ecsm_tune_data[row][col].low > DEFAULT_LOW_LEVEL) {
@@ -195,7 +202,37 @@ void ecsm_print_tuning(void) {
     print("--------------------------------------\n");
 }
 
+void ecsm_print_thresholds(void) {
+    uprintf("\n#define ECSM_THRESHOLDS {\\\n");
+    for (int row = 0; row < MATRIX_ROWS; row++) {
+        uprintf("\t{");
+        for (int col = 0; col < MATRIX_COLS; col++) {
+            uprintf("{%u, %u}", 
+                ecsm_threshold[row][col].actuation
+                , ecsm_threshold[row][col].release
+            );
+
+            if (col < MATRIX_COLS - 1) {
+                uprintf(", ");
+            }
+        }
+        if (row < MATRIX_ROWS - 1) {
+            uprintf("},\\\n");
+        } else {
+            uprintf("}\\\n");
+        }
+    }
+    uprintf("}\n\n"); 
+}
+
 void ecsm_print_matrix(void) {
+    for (int i = 0; i < MATRIX_ROWS; i++) {
+        uprintf("[ADC readings], %u, ", i);
+        for (int j = 0; j < MATRIX_COLS; j++) {
+            uprintf("%4u," , ecsm_sw_value[i][j]);
+        }
+        uprintf("\n");
+    }
 }
 
 // Scan key values and update matrix state

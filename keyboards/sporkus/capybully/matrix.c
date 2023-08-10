@@ -36,11 +36,14 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
         ecsm_update_tuning = true;
     }
 
-    if (cnt++ == 2000) {
+    if (cnt++ == 5000) {
         cnt = 0;
         ecsm_update_threshold();
 #ifdef CONSOLE_ENABLE
-        ecsm_print_tuning();
+    #if !defined(ECSM_THRESHOLDS) || defined(PRINT_ECSM_THRESHOLDS)
+        ecsm_print_thresholds();
+    #endif
+        ecsm_print_matrix();
 #endif
     }
 

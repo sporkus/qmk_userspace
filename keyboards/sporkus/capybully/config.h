@@ -38,7 +38,7 @@
 #define DISCHARGE_PIN A4
 #define ANALOG_PORT A3
 
-#define DEBUG_MATRIX_SCAN_RATE
+// #define DEBUG_MATRIX_SCAN_RATE
 
 // Larger ratio = larger switch displacement
 // baseline + setting * (max - baseline)
@@ -50,3 +50,15 @@
 #define DEFAULT_HIGH_LEVEL 700
 #define DEFAULT_ACTUATION_LEVEL 650
 #define DEFAULT_RELEASE_LEVEL 600
+
+// paste console output of ecsm_print_thresholds() here
+// this fuciont will run if ECSM_THRESHOLDS is not defined 
+#define ECSM_THRESHOLDS {\
+   {{474, 455}, {483, 473}, {461, 439}, {489, 467}, {446, 423}, {468, 445}, {627, 611}, {530, 511}, {501, 480}, {474, 451}, {496, 475}, {462, 447}, {650, 600}},\
+   {{650, 600}, {573, 555}, {518, 498}, {503, 482}, {438, 415}, {577, 559}, {593, 576}, {553, 535}, {608, 591}, {559, 540}, {618, 602}, {608, 592}, {650, 600}},\
+   {{504, 483}, {594, 577}, {615, 598}, {464, 442}, {560, 542}, {536, 516}, {593, 576}, {502, 481}, {594, 577}, {510, 489}, {390, 373}, {499, 480}, {650, 600}},\
+   {{490, 468}, {568, 550}, {496, 475}, {650, 600}, {504, 483}, {650, 600}, {513, 492}, {650, 600}, {557, 538}, {396, 380}, {378, 361}, {527, 507}, {650, 600}}\
+}
+
+// force printing thresholds
+#define PRINT_ECSM_THRESHOLDS 
