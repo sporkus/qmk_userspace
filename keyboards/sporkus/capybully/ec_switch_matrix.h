@@ -18,7 +18,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "matrix.h"
 
 typedef struct {
@@ -27,14 +26,18 @@ typedef struct {
 } ecsm_threshold_t;
 
 typedef struct {
-    uint16_t adc_readings[30];  // hold the last 30 readings
-    uint16_t adc_max;
-    uint16_t adc_median;
+    uint16_t low;  
+    uint16_t high;
 } ecsm_tune_data_t;
+
+extern bool ecsm_update_tuning;
 
 
 int      ecsm_init(void);
 bool     ecsm_matrix_scan(matrix_row_t current_matrix[]);
 uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col);
 bool     ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16_t sw_value);
+void     ecsm_update_tune_data(uint16_t new_data, uint8_t, uint8_t col);
+void     ecsm_update_threshold(void);
+void     ecsm_print_tuning(void);
 void     ecsm_print_matrix(void);
