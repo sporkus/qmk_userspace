@@ -19,6 +19,7 @@
 #define MATRIX_ROWS 4
 #define MATRIX_COLS 13
 
+// --- Pin configuration ---
 #define MATRIX_ROW_PINS \
     { C13, A2, A6, C14 }
 
@@ -38,27 +39,31 @@
 #define DISCHARGE_PIN A4
 #define ANALOG_PORT A3
 
-// #define DEBUG_MATRIX_SCAN_RATE
+// --- EC matrix configuration ---
 
 // Larger ratio = larger switch displacement
 // baseline + setting * (max - baseline)
 #define ACTUATION_RATIO 0.30
 #define RELEASE_RATIO 0.27
 
-// inital values before autotune applies, not critical
+// Starting config for EC matrix. Data format is ecsm_threshold_t[row][col] = {actuation, release}.
+// paste console output of ecsm_print_thresholds() here
+// this fucntion will run by default when ECSM_THRESHOLDS is not defined 
+#define ECSM_THRESHOLDS {\
+   {{421, 406}, {483, 469}, {463, 440}, {481, 459}, {453, 430}, {459, 436}, {625, 609}, {518, 498}, {496, 475}, {468, 446}, {493, 472}, {462, 447}, {650, 600}},\
+   {{431, 411}, {572, 554}, {520, 500}, {506, 485}, {438, 414}, {569, 551}, {593, 576}, {551, 532}, {607, 590}, {562, 544}, {608, 593}, {608, 592}, {650, 600}},\
+   {{499, 478}, {594, 577}, {593, 577}, {455, 432}, {581, 563}, {532, 513}, {589, 572}, {510, 490}, {594, 577}, {504, 484}, {390, 373}, {482, 464}, {650, 600}},\
+   {{490, 468}, {568, 550}, {496, 475}, {650, 600}, {504, 483}, {650, 600}, {511, 490}, {650, 600}, {557, 538}, {396, 380}, {378, 361}, {517, 497}, {650, 600}}\
+}
+
+// force printing thresholds
+#define PRINT_ECSM_THRESHOLDS 
+
+// placeholder values before autotune applies, not important
 #define DEFAULT_LOW_LEVEL 120
 #define DEFAULT_HIGH_LEVEL 700
 #define DEFAULT_ACTUATION_LEVEL 650
 #define DEFAULT_RELEASE_LEVEL 600
 
-// paste console output of ecsm_print_thresholds() here
-// this fuciont will run if ECSM_THRESHOLDS is not defined 
-#define ECSM_THRESHOLDS {\
-   {{474, 455}, {483, 473}, {461, 439}, {489, 467}, {446, 423}, {468, 445}, {627, 611}, {530, 511}, {501, 480}, {474, 451}, {496, 475}, {462, 447}, {650, 600}},\
-   {{650, 600}, {573, 555}, {518, 498}, {503, 482}, {438, 415}, {577, 559}, {593, 576}, {553, 535}, {608, 591}, {559, 540}, {618, 602}, {608, 592}, {650, 600}},\
-   {{504, 483}, {594, 577}, {615, 598}, {464, 442}, {560, 542}, {536, 516}, {593, 576}, {502, 481}, {594, 577}, {510, 489}, {390, 373}, {499, 480}, {650, 600}},\
-   {{490, 468}, {568, 550}, {496, 475}, {650, 600}, {504, 483}, {650, 600}, {513, 492}, {650, 600}, {557, 538}, {396, 380}, {378, 361}, {527, 507}, {650, 600}}\
-}
-
-// force printing thresholds
-#define PRINT_ECSM_THRESHOLDS 
+// --- Misc ---
+// #define DEBUG_MATRIX_SCAN_RATE
