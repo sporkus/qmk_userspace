@@ -30,13 +30,19 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     bool updated = ecsm_matrix_scan(current_matrix);
 
 // RAW matrix values on console
-#ifdef CONSOLE_ENABLE
     static int cnt = 0;
-    if (cnt++ == 500) {
-        cnt = 0;
-        ecsm_print_matrix();
+
+    if (cnt % 10 == 0) {
+        ecsm_update_tuning = true;
     }
+
+    if (cnt++ == 2000) {
+        cnt = 0;
+        ecsm_update_threshold();
+#ifdef CONSOLE_ENABLE
+        ecsm_print_tuning();
 #endif
+    }
 
     return updated;
 }

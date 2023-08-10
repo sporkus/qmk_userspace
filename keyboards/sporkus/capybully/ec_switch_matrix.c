@@ -1,4 +1,5 @@
-/* Copyright 2023 Cipulot
+/* Copyright 2023 sporkus
+ * Copyright 2023 Cipulot
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +19,6 @@
 #include "analog.h"
 #include "atomic_util.h"
 #include "print.h"
-#include "wait.h"
 
 /* Pin and port array */
 const uint32_t row_pins[]     = MATRIX_ROW_PINS;
@@ -26,15 +26,17 @@ const uint8_t  col_channels[] = MATRIX_COL_CHANNELS;
 const uint32_t mux_sel_pins[] = MUX_SEL_PINS;
 const uint32_t mux_en_pins[] =  MUX_EN_PINS;
 
+bool ecsm_update_tuning = false;
 static adc_mux adcMux;
 static uint16_t ecsm_sw_value[MATRIX_ROWS][MATRIX_COLS];
 static ecsm_threshold_t ecsm_threshold[MATRIX_ROWS][MATRIX_COLS];
+static ecsm_tune_data_t ecsm_tune_data[MATRIX_ROWS][MATRIX_COLS];
 
 
 static inline void discharge_capacitor(void) {
     writePinLow(DISCHARGE_PIN);
-    wait_us(DISCHARGE_TIME);
 }
+
 static inline void charge_capacitor(uint8_t row) {
     // Blocks discharge route
     writePinHigh(DISCHARGE_PIN);
@@ -42,26 +44,29 @@ static inline void charge_capacitor(uint8_t row) {
     writePinHigh(row_pins[row]);
 }
 
+static inline void disable_mux(uint8_t i) {
+    writePinHigh(mux_en_pins[i]);
+}
+
 static inline void disable_mux_all(void) {
     for (int i = 0; i < 2; i++) {
-        writePinHigh(mux_en_pins[i]);
+        disable_mux(i);
     }
 }
 
-static inline void enable_mux(uint8_t index) {
-    writePinLow(mux_en_pins[index]);
+static inline void enable_mux(uint8_t i) {
+    writePinLow(mux_en_pins[i]);
 }
 
 static inline void select_col(uint8_t col) {
-    disable_mux_all();
-
     uint8_t ch = col_channels[col];
+    uint8_t active_mux = (ch & 8) ? 1 : 0;
+
+    disable_mux(!active_mux);
     writePin(mux_sel_pins[0], ch & 1);
     writePin(mux_sel_pins[1], ch & 2);
     writePin(mux_sel_pins[2], ch & 4);
-
-    uint8_t mux_index = (ch & 8) ? 1 : 0;
-    enable_mux(mux_index);
+    enable_mux(active_mux);
 }
 
 static inline void init_row(void) {
@@ -88,6 +93,8 @@ int ecsm_init(void) {
         for (int j = 0; j < MATRIX_COLS; j++) {
             ecsm_threshold[i][j].actuation = DEFAULT_ACTUATION_LEVEL;
             ecsm_threshold[i][j].release = DEFAULT_RELEASE_LEVEL;
+            ecsm_tune_data[i][j].low = DEFAULT_LOW_LEVEL;
+            ecsm_tune_data[i][j].high = DEFAULT_ACTUATION_LEVEL;
         }
     }
 
@@ -106,6 +113,31 @@ int ecsm_init(void) {
     return 0;
 }
 
+void ecsm_update_tune_data(uint16_t new_value, uint8_t row, uint8_t col) {
+    if (ecsm_update_tuning) {
+        if (new_value > ecsm_tune_data[row][col].high && new_value > DEFAULT_HIGH_LEVEL) {
+            ecsm_tune_data[row][col].high = (ecsm_tune_data[row][col].high * 0.5 + new_value * 0.5);
+        } else if (new_value > DEFAULT_LOW_LEVEL && new_value < DEFAULT_RELEASE_LEVEL) {
+            ecsm_tune_data[row][col].low = (ecsm_tune_data[row][col].low * 0.9 + new_value * 0.1);
+        }
+    }
+}
+
+void ecsm_update_threshold(void) {
+    for (int i = 0; i < MATRIX_ROWS; i++) {
+        for (int j = 0; j < MATRIX_COLS; j++) {
+            uint16_t low = ecsm_tune_data[i][j].low; 
+            uint16_t high = ecsm_tune_data[i][j].high; 
+            bool tune_data_changed = high > DEFAULT_HIGH_LEVEL && low > DEFAULT_LOW_LEVEL;
+
+            if (tune_data_changed) {
+                ecsm_threshold[i][j].actuation = low + (high - low) * ACTUATION_RATIO;
+                ecsm_threshold[i][j].release = low + (high - low) * RELEASE_RATIO;
+            }
+        }
+    }
+}
+
 // Read the capacitive sensor value
 uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
     uint16_t sw_value = 0;
@@ -120,6 +152,7 @@ uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
     // reset sensor
     writePinLow(row_pins[row]);
     discharge_capacitor();
+    ecsm_update_tune_data(sw_value, row, col);
     return sw_value;
 }
 
@@ -128,13 +161,13 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
     bool current_state = (*current_row >> col) & 1;
 
     // Press to release
-    if (current_state && sw_value < ecsm_threshold[row][col].actuation) {
+    if (current_state && sw_value < ecsm_threshold[row][col].release) {
         *current_row &= ~(1 << col);
         return true;
     }
 
     // Release to press
-    if ((!current_state) && sw_value > ecsm_threshold[row][col].release) {
+    if (!current_state && sw_value > ecsm_threshold[row][col].actuation) {
         *current_row |= (1 << col);
         return true;
     }
@@ -143,17 +176,26 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
 }
 
 // Debug print key values
-void ecsm_print_matrix(void) {
-    for (int row = 0; row < MATRIX_ROWS; row++) {
+void ecsm_print_tuning(void) {
+    for (int row = MATRIX_ROWS - 1; row >= 0; row--) {
         for (int col = 0; col < MATRIX_COLS; col++) {
-            uprintf("adc_readings, %u, %u, ", row, col);
-            uprintf("%d\n", ecsm_sw_value[row][col]);
-            /* if (col < (MATRIX_COLS - 1)) { */
-            /*     print(","); */
-            /* } */
+            if (ecsm_tune_data[row][col].low > DEFAULT_LOW_LEVEL) {
+                uprintf("ADC [%u, %u] current: %u; low: %u; high: %u, actuation: %u; release: %u\n", 
+                    row
+                    , col
+                    , ecsm_sw_value[row][col]
+                    , ecsm_tune_data[row][col].low
+                    , ecsm_tune_data[row][col].high
+                    , ecsm_threshold[row][col].actuation
+                    , ecsm_threshold[row][col].release
+                );
+            }
         }
     }
-    print("\n");
+    print("--------------------------------------\n");
+}
+
+void ecsm_print_matrix(void) {
 }
 
 // Scan key values and update matrix state
@@ -166,6 +208,6 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
             updated |= ecsm_update_key(&current_matrix[row], row, col, ecsm_sw_value[row][col]);
         }
     }
-
+    ecsm_update_tuning = false;
     return updated;
 }

@@ -38,7 +38,15 @@
 #define DISCHARGE_PIN A4
 #define ANALOG_PORT A3
 
-#define DISCHARGE_TIME 1
+#define DEBUG_MATRIX_SCAN_RATE
+
+// Larger ratio = larger switch displacement
+// baseline + setting * (max - baseline)
+#define ACTUATION_RATIO 0.30
+#define RELEASE_RATIO 0.27
+
+// inital values before autotune applies, not critical
+#define DEFAULT_LOW_LEVEL 120
+#define DEFAULT_HIGH_LEVEL 700
 #define DEFAULT_ACTUATION_LEVEL 650
 #define DEFAULT_RELEASE_LEVEL 600
-#define DEBUG_MATRIX_SCAN_RATE
