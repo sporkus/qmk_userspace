@@ -6,6 +6,7 @@
 #define RGB_MATRIX_LED_COUNT 11
 #define DRIVER_LED_TOTAL RGB_MATRIX_LED_COUNT
 
+// Comment these out if you don't want front indicators leds
 #define RGB_MATRIX_MODS_INDICATOR
 #define RGB_MATRIX_LAYER_INDICATOR
 

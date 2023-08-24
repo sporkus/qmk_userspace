@@ -59,15 +59,19 @@ const uint8_t PROGMEM layer_colors[][3] = {
 };
 
 void set_rgb_matrix_indicators(uint8_t led_min, uint8_t led_max) {
-    #ifdef RGB_MATRIX_LAYER_INDICATOR
+    #if defined(RGB_MATRIX_LAYER_INDICATOR)
     int layer = get_highest_layer(layer_state|default_layer_state);
     RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, layer_colors[layer][0], layer_colors[layer][1], layer_colors[layer][2]);
     /* uprintf("layer RGB: (%u, %u, %u)\n", LAYER_R, LAYER_G, LAYER_B); */
+    #else
+    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, RGB_OFF);
     #endif
 
-    #ifdef RGB_MATRIX_MODS_INDICATOR
+    #if defined(RGB_MATRIX_MODS_INDICATOR)
     RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_BOTTOM, MODS_R, MODS_G, MODS_B);
     /* uprintf("mod RGB: (%u, %u, %u)\n", MODS_R, MODS_G, MODS_B); */
+    #else
+    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_BOTTOM, RGB_OFF);
     #endif
 }
 
