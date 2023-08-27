@@ -17,6 +17,7 @@
 
 #include "ec_switch_matrix.h"
 #include "analog.h"
+#include "wait.h"
 #include "atomic_util.h"
 #include "print.h"
 
@@ -127,8 +128,10 @@ int ecsm_init(void) {
 void ecsm_update_tune_data(uint16_t new_value, uint8_t row, uint8_t col) {
     if (ecsm_update_tuning) {
         if (new_value > ecsm_tune_data[row][col].high && new_value > DEFAULT_HIGH_LEVEL) {
+            // Updating max ADC reading
             ecsm_tune_data[row][col].high = (ecsm_tune_data[row][col].high * 0.5 + new_value * 0.5);
         } else if (new_value > DEFAULT_LOW_LEVEL && new_value < DEFAULT_RELEASE_LEVEL) {
+            // Updating idle ADC reading
             ecsm_tune_data[row][col].low = (ecsm_tune_data[row][col].low * 0.9 + new_value * 0.1);
         }
     }
@@ -142,8 +145,8 @@ void ecsm_update_threshold(void) {
             bool tune_data_changed = high > DEFAULT_HIGH_LEVEL && low > DEFAULT_LOW_LEVEL;
 
             if (tune_data_changed) {
-                ecsm_threshold[i][j].actuation = low + (high - low) * ACTUATION_RATIO;
-                ecsm_threshold[i][j].release = low + (high - low) * RELEASE_RATIO;
+                ecsm_threshold[i][j].actuation = low + ACTUATION_OFFSET;
+                ecsm_threshold[i][j].release = low + RELEASE_OFFSET;
             }
         }
     }
@@ -158,6 +161,7 @@ uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
     writePinLow(row_pins[row]);
     ATOMIC_BLOCK_FORCEON {
         charge_capacitor(row);
+        __asm__ __volatile__("nop;nop;nop;\n\t");
         sw_value = adc_read(adcMux);
     }
     // reset sensor
@@ -207,6 +211,7 @@ void ecsm_print_tuning(void) {
 }
 
 void ecsm_print_thresholds(matrix_row_t current_matrix[]) {
+    // Prints ec matrix config block
     uprintf("\n#define ECSM_THRESHOLDS {\\\n");
     for (int i = 0; i < MATRIX_ROWS; i++) {
         uprintf("\t{");

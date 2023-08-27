@@ -26,8 +26,8 @@ typedef struct {
 } ecsm_threshold_t;
 
 typedef struct {
-    uint16_t low;
-    uint16_t high;
+    uint16_t low;     // ADC reading at idle
+    uint16_t high;    // max ADC reading
 } ecsm_tune_data_t;
 
 extern bool ecsm_update_tuning;

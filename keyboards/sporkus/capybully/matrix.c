@@ -1,4 +1,5 @@
-/* Copyright 2023 Cipulot
+/* Copyright 2023 sporkus
+ * Copyright 2023 Cipulot
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +37,7 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
         ecsm_update_tuning = true;
     }
 
-    if (cnt++ == 1000) {
+    if (cnt++ == 200) {
         cnt = 0;
         ecsm_update_threshold();
 #ifdef CONSOLE_ENABLE
