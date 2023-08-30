@@ -7,7 +7,6 @@
 #define CMB(name, action, ...) C_##name,
 enum combos {
     #include COMBOS_DEF
-    COMBO_LENGTH
 };
 #undef CMB
 
@@ -16,8 +15,7 @@ enum combos {
 #undef CMB
 
 #define CMB(name, output, term, ...) COMBO(name##_combo, output),
-uint16_t COMBO_LEN = COMBO_LENGTH;
-combo_t key_combos[COMBO_LENGTH] = {
+combo_t key_combos[] = {
     #include COMBOS_DEF
 };
 #undef CMB
