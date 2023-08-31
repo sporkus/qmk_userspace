@@ -40,6 +40,13 @@ CMB(RPRN,      KC_RPRN,     80, KC_U,    HM_J)
 CMB(RCBR,      KC_RCBR,     80, KC_I,    HM_K)
 CMB(RBRC,      KC_RBRC,     80, KC_O,    HM_L)
 
+//Special functions
+#ifdef EC_MATRIX
+CMB(EC_AP_INC, EC_AP_I,     30, KC_E,    KC_C, KC_I)
+CMB(EC_AP_DEC, EC_AP_D,     30, KC_E,    KC_C, HM_D)
+#endif
+CMB(EE_CLR,    EE_CLR,      30, KC_E,    KC_C, KC_R)
+
 // Layout key reference
 //  KC_Q | KC_W | KC_E | KC_R | KC_T      ||     KC_Y | KC_U |  KC_I   |  KC_O  |  KC_P   |
 //  HM_A | HM_S | HM_D | HM_F | KC_G      ||     KC_H | HM_J |  HM_K   |  HM_L  | HM_QUOT |

@@ -17,36 +17,20 @@
 #pragma once
 
 // --- EC matrix user configuration ---
-// idle adc + offset = actuation/release threshold
-// Larger offset = More key travel distance
-#define ACTUATION_OFFSET 150
+// Actuation/release threshold = idle + offset 
+// Larger offset = More key travel distance, less sensitive
+// Sensitivity can be adjusted using keycode: EC_AP_I/EC_AP_D
+#define ACTUATION_OFFSET 150  
 #define RELEASE_OFFSET 170
+#define DEFAULT_IDLE 500      // default value before tuning is completed
+// #define ECSM_DEBUG         // enables printing ec config and ADC readings
+#define EC_MATRIX
 
-#define PRINT_ECSM_THRESHOLDS // enables printing key actutation threshold
-#define PRINT_ECSM_READINGS   // enables printing matrix ADC readings
-#define ECSM_UPDATE_CYCLES 20 // gather data for autotune every x matrix scans
-
-// Starting config for EC matrix. Data format is ecsm_threshold_t[row][col] = {actuation, release}.
-// paste console output of ecsm_print_thresholds() here. This should be updated after every assembly
-
-/* Example: */
-/* #define ECSM_THRESHOLDS {\ */
-/*    {{389, 339}, {522, 472}, {429, 379}, {481, 431}, {351, 301}, {388, 338}, {477, 427}, {461, 411}, {482, 432}, {410, 360}, {415, 365}, {417, 367}, {650, 600}},\ */
-/*    {{392, 342}, {583, 533}, {468, 418}, {508, 458}, {431, 381}, {637, 587}, {619, 569}, {487, 437}, {620, 570}, {554, 504}, {647, 597}, {637, 587}, {650, 600}},\ */
-/*    {{465, 415}, {590, 540}, {624, 574}, {483, 433}, {475, 425}, {454, 404}, {551, 501}, {521, 471}, {655, 605}, {541, 491}, {390, 340}, {438, 388}, {650, 600}},\ */
-/*    {{556, 506}, {477, 427}, {464, 414}, {650, 600}, {504, 454}, {650, 600}, {441, 391}, {650, 600}, {520, 470}, {369, 319}, {383, 333}, {448, 398}, {650, 600}}\ */
-/* } */
-
-
-// placeholder values before autotune applies, not important
-#define DEFAULT_LOW_LEVEL 120
-#define DEFAULT_HIGH_LEVEL 700
-#define DEFAULT_ACTUATION_LEVEL 650
-#define DEFAULT_RELEASE_LEVEL 600
+// enables tuning ec config every power cycle, disable to reduce write cycle to flash
+#define ECSM_TUNE_ON_BOOT  
 
 // --- Misc ---
 // #define DEBUG_MATRIX_SCAN_RATE
-
 
 // --- Pin configuration ---
 #define MATRIX_ROWS 4
@@ -70,3 +54,9 @@
 
 #define DISCHARGE_PIN A4
 #define ANALOG_PORT A3
+
+// --- Persistent Storage config ---
+// Data size is in bytes. uint16_t = 2 bytes
+// data block size needs to be uint16_t array length * 2
+// Two addition words for actuation offsets and one byte for configuration check
+#define EECONFIG_KB_DATA_SIZE ((MATRIX_ROWS * MATRIX_COLS + 2) * 2 + 1)

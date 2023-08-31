@@ -19,5 +19,22 @@
                 "Full Right Shift",
                 "Big bar"
             ]
-    }
+    },
+    "customKeycodes": [
+        {
+         "title": "Actuation point increment",
+         "shortName": "EC\nAPC+",
+         "name": "EC_AP_I"
+        },
+        {
+         "title": "Actuation point decrement",
+         "shortName": "EC\nAPC-",
+         "name": "EC_AP_D"
+        },
+        {
+         "title": "EC config reset",
+         "shortName": "EC\nconfig\nreset",
+         "name": "EE_CLR"
+        }
+    ]
 }
