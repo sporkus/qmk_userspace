@@ -22,6 +22,7 @@
 /* matrix state(1:on, 0:off) */
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
 extern matrix_row_t matrix[MATRIX_ROWS];     // debounced values
+extern bool ecsm_update_tuning;
 
 void matrix_init_custom(void) {
     ecsm_init();
@@ -30,26 +31,17 @@ void matrix_init_custom(void) {
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     bool updated = ecsm_matrix_scan(current_matrix);
 
-// RAW matrix values on console
+#ifdef CONSOLE_ENABLE
+    #ifdef ECSM_DEBUG
     static int cnt = 0;
 
-    if (cnt % ECSM_UPDATE_CYCLES == 0) {
-        ecsm_update_tuning = true;
-    }
-
-    if (cnt++ == 200) {
+    if (cnt++ == 1000) {
         cnt = 0;
-        ecsm_update_threshold();
-#ifdef CONSOLE_ENABLE
-    #if !defined(ECSM_THRESHOLDS) || defined(PRINT_ECSM_THRESHOLDS)
-        ecsm_print_thresholds(current_matrix);
-    #endif
-
-    #ifdef PRINT_ECSM_READINGS
+        ecsm_print_debug();
         ecsm_print_matrix(current_matrix);
+    }
     #endif
 #endif
-    }
 
     return updated;
 }
