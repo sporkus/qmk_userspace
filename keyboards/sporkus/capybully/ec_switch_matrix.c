@@ -16,7 +16,6 @@
  */
 
 #include <math.h>
-#include <limits.h>
 #include "ec_switch_matrix.h"
 #include "analog.h"
 #include "atomic_util.h"

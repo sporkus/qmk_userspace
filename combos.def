@@ -41,10 +41,11 @@ CMB(RCBR,      KC_RCBR,     80, KC_I,    HM_K)
 CMB(RBRC,      KC_RBRC,     80, KC_O,    HM_L)
 
 //Special functions
-CMB(EC_UPDATE, EC_UPDATE,   30, KC_E,    KC_C, KC_U, KC_P)
+#ifdef EC_MATRIX
+CMB(EC_AP_INC, EC_AP_I,     30, KC_E,    KC_C, KC_I)
+CMB(EC_AP_DEC, EC_AP_D,     30, KC_E,    KC_C, HM_D)
+#endif
 CMB(EE_CLR,    EE_CLR,      30, KC_E,    KC_C, KC_R)
-CMB(EC_AP_INC, EC_AP_INC,   30, KC_E,    KC_C, KC_I)
-CMB(EC_AP_DEC, EC_AP_DEC,   30, KC_E,    KC_C, HM_D)
 
 // Layout key reference
 //  KC_Q | KC_W | KC_E | KC_R | KC_T      ||     KC_Y | KC_U |  KC_I   |  KC_O  |  KC_P   |

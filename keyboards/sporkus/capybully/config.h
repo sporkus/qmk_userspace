@@ -17,12 +17,14 @@
 #pragma once
 
 // --- EC matrix user configuration ---
-// idle adc + offset = actuation/release threshold
+// Actuation/release threshold = idle + offset 
 // Larger offset = More key travel distance, less sensitive
-#define ACTUATION_OFFSET 150
+// Sensitivity can be adjusted using keycode: EC_AP_I/EC_AP_D
+#define ACTUATION_OFFSET 150  
 #define RELEASE_OFFSET 170
 #define DEFAULT_IDLE 500      // default value before tuning is completed
 // #define ECSM_DEBUG         // enables printing ec config and ADC readings
+#define EC_MATRIX
 
 // enables tuning ec config every power cycle, disable to reduce write cycle to flash
 #define ECSM_TUNE_ON_BOOT  
