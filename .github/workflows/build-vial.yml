@@ -12,7 +12,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: set-matrix
         run: echo "matrix=$(find keyboards -type d -name vial | sed 's/keyboards\///' | sed 's/\/keymaps.*//' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
@@ -29,14 +29,14 @@ jobs:
 
     steps:
     - name: Checkout VIAL QMK
-      uses: actions/checkout@v3.5.3
+      uses: actions/checkout@v3
       with:
         repository: vial-kb/vial-qmk
         ref: vial
         submodules: true
 
     - name: Checkout userspace
-      uses: actions/checkout@v3.5.3
+      uses: actions/checkout@v3
       with:
         path: ${{ env.USERSPACE_PATH }}
         persist-credentials: false
