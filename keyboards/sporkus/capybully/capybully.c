@@ -5,14 +5,11 @@ extern ecsm_config_t ecsm_config;
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         switch(keycode) {
-            case EC_AP_INC:
+            case EC_AP_I:
                 ecsm_ap_inc();
                 return false;
-            case EC_AP_DEC:
+            case EC_AP_D:
                 ecsm_ap_dec();
-                return false;
-            case EC_UPDATE:
-                ecsm_config_update();
                 return false;
         }
     }

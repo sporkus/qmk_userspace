@@ -19,5 +19,15 @@
                 "Full Right Shift",
                 "Big bar"
             ]
-    }
+    },
+    "customKeycodes": [
+        {"name": "APC +",
+         "title": "EC actuation point increment",
+         "shortName": "EC_AP_I"
+        },
+        {"name": "APC -",
+         "title": "EC actuation point decrement",
+         "shortname": "EC_AP_D"
+        }
+    ],
 }
