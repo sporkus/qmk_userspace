@@ -2,14 +2,12 @@ Personal QMK Userspace
 =========================
 
 ## Features
-* global quick tap
-* num word with timeout
+* Github action build with latest qmk and vial
+* Combo and key override definition files
+* User layout wrapper
 
-## Adding keymap for a new keyboard
-* Create a `[keyboard].json` and `[keyboard]_layout.h` file
-
-## credits
+## Credits and inspirations
 * filterpaper
 * sadekbaroudi
 * geutreur
-* Num word was copied from replicaJunction
+* replicaJunction
