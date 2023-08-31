@@ -21,13 +21,20 @@
             ]
     },
     "customKeycodes": [
-        {"name": "APC +",
-         "title": "EC actuation point increment",
-         "shortName": "EC_AP_I"
+        {
+         "title": "Actuation point increment",
+         "shortName": "EC\nAPC+",
+         "name": "EC_AP_I"
         },
-        {"name": "APC -",
-         "title": "EC actuation point decrement",
-         "shortname": "EC_AP_D"
+        {
+         "title": "Actuation point decrement",
+         "shortName": "EC\nAPC-",
+         "name": "EC_AP_D"
+        },
+        {
+         "title": "EC config reset",
+         "shortName": "EC\nconfig\nreset",
+         "name": "EE_CLR"
         }
     ]
 }

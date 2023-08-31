@@ -120,15 +120,17 @@ void ecsm_config_update(void) {
 }
 
 void ecsm_eeprom_clear(void) {
+    uprintln("\nClearing EC config");
     ecsm_config.configured = 0;
-    ecsm_config.actuation_offset = 0;
-    ecsm_config.release_offset = 0;
+    ecsm_config.actuation_offset = ACTUATION_OFFSET;
+    ecsm_config.release_offset = RELEASE_OFFSET;
     for (int i = 0; i < MATRIX_ROWS; i++) {
         for (int j = 0; j < MATRIX_COLS; j++) {
             ecsm_config.idle[i][j] = 0;
         }
     }
     eeconfig_update_kb_datablock(&ecsm_config);
+    ecsm_is_tuning = 1e5;
 }
 
 void ecsm_ap_inc(void) {
