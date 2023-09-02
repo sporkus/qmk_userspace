@@ -24,7 +24,8 @@ Enter the DFU bootloader in 3 ways:
 See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_tools) and the [make instructions](https://docs.qmk.fm/#/getting_started_make_guide) for more information. Brand new to QMK? Start with our [Complete Newbs Guide](https://docs.qmk.fm/#/newbs).
 
 ## EC Matrix functions
-####Tuning
+
+#### Tuning
 
 The baseline for each key is different. Even if you use the same parts, they can change between assemblies. The very first time firmware is flashed, a quick auto tuning will be done (about half a minute). As long as you don't intentionally feather the keys, it should be immediately usable and not affect the tuning result.
 
