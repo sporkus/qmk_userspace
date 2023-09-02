@@ -12,6 +12,7 @@
     "bootloader": "stm32-dfu",
     "features": {
         "console": true,
+        "encoder": true,
         "extrakey": true,
         "mousekey": true,
         "nkro": true
@@ -20,7 +21,13 @@
         "enabled": true,
         "matrix": [0, 0]
     },
+    "encoder": {
+      "rotary": [
+        {"pin_a": "B4", "pin_b": "B5", "resolution": 2}
+      ]
+    },
     "layouts": {
+        "LAYOUT_no_knob": {
             "layout": [
                 { "matrix": [0, 0], "x": 0,    "y": 0 },
                 { "matrix": [0, 1], "x": 1,    "y": 0 },
@@ -69,7 +76,7 @@
                 { "matrix": [0, 3], "x": 3,    "y": 0 },
                 { "matrix": [0, 4], "x": 4,    "y": 0 },
 
-                { "matrix": [3, 5], "x": 5.5,  "y": 0 },
+                { "matrix": [4, 0], "x": 5.5,  "y": 0 },
 
                 { "matrix": [0, 5], "x": 7,    "y": 0 },
                 { "matrix": [0, 6], "x": 8,    "y": 0 },

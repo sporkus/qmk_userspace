@@ -17,32 +17,34 @@
 #pragma once
 
 // --- EC matrix user configuration ---
-// Actuation/release threshold = idle + offset 
+// Actuation/release threshold = idle + offset
 // Larger offset = More key travel distance, less sensitive
 // Sensitivity can be adjusted using keycode: EC_AP_I/EC_AP_D
-#define ACTUATION_OFFSET 150  
+#define ACTUATION_OFFSET 150
 #define RELEASE_OFFSET 170
 #define DEFAULT_IDLE 500      // default value before tuning is completed
-// #define ECSM_DEBUG         // enables printing ec config and ADC readings
+#define ECSM_DEBUG            // enables printing ec config and ADC readings */
 
 // enables tuning ec config every power cycle, disable to reduce write cycle to flash
-#define ECSM_TUNE_ON_BOOT  
+#define ECSM_TUNE_ON_BOOT
 
 // --- Misc ---
-// #define DEBUG_MATRIX_SCAN_RATE
+#define DEBUG_MATRIX_SCAN_RATE
 
 // --- Pin configuration ---
-#define MATRIX_ROWS 4
+#define MATRIX_ROWS 5
 #define MATRIX_COLS 10
+#define EC_MATRIX_ROWS 4
+#define EC_MATRIX_COLS MATRIX_COLS
 
-#define MATRIX_ROW_PINS \
-    { A3, B1, A5, A7 }
+#define EC_MATRIX_ROW_PINS \
+    { A3, A5, A7, B1 }
 
 /* offset the second multiplexer channel by 8 */
-#define MATRIX_COL_CHANNELS \
+#define EC_MATRIX_COL_CHANNELS \
     { \
-       0, 1, 2, 3, 4 \
-       10, 12, 13, 14, 15 \
+       0, 1, 2, 3, 4, \
+       10, 12, 14, 15, 13 \
     }
 
 #define MUX_SEL_PINS \
@@ -54,10 +56,10 @@
 #define DISCHARGE_PIN A1 // opamp v+/mux output
 #define ANALOG_PORT A2   // opamp v_out/adc
 
-// Using extra GPIO pins to update the matrix
-#define EXTRA_SWITCH 1
-#define EXTRA_SWITCH_PINS {A1} 
-#define EXTRA_SWITCH_MATRIX {{3, 5}}  //a list of [row, col]
+// extra list of direct pins to read
+#define EXTRA_SWITCHES 1                      // number of extra switches
+#define EXTRA_SWITCH_ROW (MATRIX_ROWS - 1)    // the last row
+#define EXTRA_SWITCH_PINS {B3}
 
 // --- Persistent Storage config ---
 // Data size is in bytes. uint16_t = 2 bytes

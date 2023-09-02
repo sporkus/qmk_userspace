@@ -19,16 +19,10 @@
 #include "matrix.h"
 #include "print.h"
 
-/* matrix state(1:on, 0:off) */
-// extern matrix_row_t raw_matrix[MATRIX_ROWS]; // raw values
-// extern matrix_row_t matrix[MATRIX_ROWS];     // debounced values
-extern bool ecsm_update_tuning;
-
 const uint32_t extra_switch_pins[] =  EXTRA_SWITCH_PINS;
-const uint8_t extra_switch_matrix[][] =  EXTRA_SWITCH_MATRIX;
 
-bool extra_switch_init() {
-    for (int i = 0, i < EXTRA_SWITCH; i++) {
+void extra_switch_init(void) {
+    for (int i = 0; i < EXTRA_SWITCHES; i++) {
         setPinInputHigh(extra_switch_pins[i]);
     }
 }
@@ -38,32 +32,37 @@ void matrix_init_custom(void) {
     extra_switch_init();
 }
 
-bool extra_switch_scan(matrix_row_t current_matrix[]) {
+bool extra_switches_scan(matrix_row_t current_matrix[]) {
     bool updated = false;
-    for (int pin = 0, pin < EXTRA_SWITCH; pin++) {
-        int row = extra_switch_matrix[pin][0];
-        int col = extra_switch_matrix[pin][1];
+    matrix_row_t prev_row_state = current_matrix[EXTRA_SWITCH_ROW];
+    matrix_row_t curr_row_state = 0;
 
-        uint8_t col_mask = 1 << col;
-        uint8_t old_state = current_matrix[row] & col_mask; 
-        current_matrix[row] |= readPin(extra_switch_pins[pin]) ? 0 : col_mask;
-        updated |= (old_state != (current_matrix[row] & col_mask));
+    for (int i = 0; i < EXTRA_SWITCHES; i++) {
+        uint8_t mask = 1 << i;
+        curr_row_state |= readPin(extra_switch_pins[i]) ? 0 : mask;
     }
+
+    if (curr_row_state != prev_row_state) {
+        current_matrix[EXTRA_SWITCH_ROW] = curr_row_state;
+        updated = true;
+    }
+
     return updated;
 }
 
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     bool updated = ecsm_matrix_scan(current_matrix);
-    updated |= extra_switch_scan();
+    updated |= extra_switches_scan(current_matrix);
 
 #ifdef CONSOLE_ENABLE
     #ifdef ECSM_DEBUG
     static int cnt = 0;
 
-    if (cnt++ == 1000) {
+    if (cnt++ == 500) {
         cnt = 0;
         ecsm_print_debug();
         ecsm_print_matrix(current_matrix);
+        matrix_print();
     }
     #endif
 #endif
