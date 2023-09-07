@@ -20,10 +20,10 @@ enum custom_keycodes {
 #define HM_S	LALT_T(KC_S)
 #define HM_D	LGUI_T(KC_D)
 #define HM_F	LCTL_T(KC_F)
-#define HM_J	RCTL_T(KC_J)
-#define HM_K	RGUI_T(KC_K)
-#define HM_L	RALT_T(KC_L)
-#define HM_QUOT	RSFT_T(KC_QUOT)
+#define HM_J	LCTL_T(KC_J)
+#define HM_K	LGUI_T(KC_K)
+#define HM_L	LALT_T(KC_L)
+#define HM_QUOT	LSFT_T(KC_QUOT)
 #define SFT_ENT RSFT_T(KC_ENT)
 #define SFT_Z    LSFT_T(KC_Z)
 #define SFT_SLSH RSFT_T(KC_SLSH)
@@ -31,7 +31,7 @@ enum custom_keycodes {
 #define HRML(halfrow) _HRML(halfrow)
 #define HRMR(halfrow) _HRMR(halfrow)
 #define _HRML(k1, k2, k3, k4, k5)     LSFT_T(k1), LALT_T(k2), LGUI_T(k3), LCTL_T(k4),         k5
-#define _HRMR(k1, k2, k3, k4, k5)             k1, RCTL_T(k2), RGUI_T(k3), RALT_T(k4), RSFT_T(k5)
+#define _HRMR(k1, k2, k3, k4, k5)             k1, LCTL_T(k2), LGUI_T(k3), LALT_T(k4), LSFT_T(k5)
 #define BRML(halfrow) _BRML(halfrow)
 #define BRMR(halfrow) _BRMR(halfrow)
 #define _BRML(k1, k2, k3, k4, k5)     LSFT_T(k1), k2, k3, k4, k5
@@ -56,7 +56,7 @@ enum layers {BASE, NUM, NAV, FN};
 	KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,        KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    \
 	KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J,    KC_K,    KC_L,    KC_QUOT, \
 	KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,        KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, \
-	                           NAV_SPC, NUM_SPC,     NAV_SPC, NUM_SPC
+	                           KC_RCTL, NUM_SPC,     NAV_SPC, NUM_SPC
 
 #define _NUM \
     FN_TILD, _______, _______, KC_SCLN, _______,     KC_EQL,  KC_7,    KC_8,    KC_9,    KC_0,    \

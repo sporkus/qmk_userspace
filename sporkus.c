@@ -44,6 +44,29 @@ uint16_t get_global_quick_tap_ms(uint16_t keycode, keyrecord_t* record) {
 }
 #endif
 
+uint32_t os_msg(uint32_t trigger_time, void *cb_arg) {
+    uprintf("Detected OS is: ");
+    switch(detected_host_os()) {
+        case OS_MACOS:
+            uprintf("Mac\n");
+            keymap_config.swap_rctl_rgui = true;
+            break;
+        case OS_LINUX:
+            uprintf("Linux\n");
+            break;
+        case OS_WINDOWS:
+            uprintf("Windows\n");
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+void keyboard_post_init_user(void) {
+    defer_exec(1000, os_msg, NULL);
+}
+
 // return false to interrupt normal processing
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     #ifdef CONSOLE_ENABLE
