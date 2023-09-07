@@ -32,7 +32,7 @@ static uint16_t ecsm_sw_value[MATRIX_ROWS][MATRIX_COLS];
 
 static ecsm_threshold_t ecsm_thresholds[MATRIX_ROWS][MATRIX_COLS];
 static int16_t ecsm_tuning_data[MATRIX_ROWS][MATRIX_COLS];
-static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reaches 0 
+static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reaches 0
 
 /* fancy printing */
 const char* red = "\x1b[31m";
@@ -80,7 +80,7 @@ static inline void init_row(void) {
     }
 }
 
-/// @brief hardware initialization for mux 
+/// @brief hardware initialization for mux
 static inline void init_mux(void) {
     for (int i = 0; i < 2; i++) {
         setPinOutput(mux_en_pins[i]);
@@ -101,7 +101,7 @@ void ecsm_config_init(void) {
                 ecsm_config.release_offset = RELEASE_OFFSET;
                 ecsm_config.idle[i][j] = DEFAULT_IDLE;
             }
-            ecsm_tuning_data[i][j] = ecsm_config.idle[i][j]; 
+            ecsm_tuning_data[i][j] = ecsm_config.idle[i][j];
         }
     }
     ecsm_update_thresholds();
@@ -134,15 +134,16 @@ void ecsm_eeprom_clear(void) {
 }
 
 void ecsm_ap_inc(void) {
-    int16_t max_offset = 200;
+    int16_t max_offset = 400;
     uprintf("\nIncreasing actuation point (less sensitive)\n");
     ecsm_config.actuation_offset += 15;
     ecsm_config.release_offset += 15;
 
     if (ecsm_config.actuation_offset > max_offset || ecsm_config.release_offset > max_offset) {
         uprintf("\nActuation point at maximum\n");
+        int offset_diff = RELEASE_OFFSET - ACTUATION_OFFSET;
         ecsm_config.actuation_offset = max_offset;
-        ecsm_config.release_offset = max_offset;
+        ecsm_config.release_offset = max_offset + offset_diff;
     }
 
     ecsm_update_thresholds();
@@ -157,8 +158,9 @@ void ecsm_ap_dec(void) {
 
     if (ecsm_config.actuation_offset < min_offset || ecsm_config.release_offset < min_offset) {
         uprintf("\nActuation point at minimum\n");
+        int offset_diff = RELEASE_OFFSET - ACTUATION_OFFSET;
         ecsm_config.actuation_offset = min_offset;
-        ecsm_config.release_offset = min_offset;
+        ecsm_config.release_offset = min_offset + offset_diff;
     }
 
     ecsm_update_thresholds();
@@ -288,6 +290,7 @@ void ecsm_print_debug(void) {
     uprintln();
 }
 
+
 // Scan key values and update matrix state
 bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
     bool updated = false;
@@ -305,10 +308,11 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                 ecsm_update_tuning_data(adc, row, col);
 
                 if (ecsm_is_tuning == 0) {
-                    uprintln("EC config tuning completed");
+                    uprintln("\n### EC tuning completed ####################################################");
                     ecsm_update_thresholds();
                     ecsm_config.configured = true;
                     ecsm_config_update();
+                    uprintln("###############################################################################\n");
                 }
             }
         }
