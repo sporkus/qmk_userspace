@@ -7,6 +7,7 @@
 #include "quantum.h"
 #include "action.h"
 #include "keycodes.h"
+#include "os_detection.h"
 #include "features/global_quick_tap.h"
 #include "features/swapper.h"
 
@@ -24,3 +25,4 @@
 #ifdef KEY_OVERRIDE_ENABLE
 #	include "key_overrides.h"
 #endif
+
