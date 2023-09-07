@@ -20,9 +20,10 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     return process_record_user(keycode, record);
 };
 
-void keyboard_post_init_kb(void) {  
+void keyboard_post_init_kb(void) {
     #ifdef ECSM_TUNE_ON_BOOT
         ecsm_config.configured = 0;
-        eeconfig_update_kb_datablock(&ecsm_config); 
+        eeconfig_update_kb_datablock(&ecsm_config);
     #endif
+    keyboard_post_init_user();
 }

@@ -11,7 +11,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
           KC_TAB,              LEFT_ROW1(_BASE),        RIGHT_ROW1(_BASE),        KC_DEL,  KC_BSPC, \
           NAV_ESC,             HRML(LEFT_ROW2(_BASE)),  HRMR(RIGHT_ROW2(_BASE)),  KC_COLN, \
           KC_LSFT,             LEFT_ROW3(_BASE),        RIGHT_ROW3(_BASE),        SFT_ENT, \
-KC_LCTL,  KC_LALT,  KC_LGUI,   NUM_SPC,                 NAV_SPC,   KC_RGUI, KC_RALT, KC_RCTL
+KC_LCTL,  KC_LALT,  KC_RCTL,   NUM_SPC,                 NAV_SPC,   KC_RGUI, KC_RALT, KC_RCTL
     ),
     [1] = LAYOUT_w(
            _______,             LEFT_ROW1(_NUM),        RIGHT_ROW1(_NUM),   KC_LBRC, KC_RBRC, \
