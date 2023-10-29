@@ -36,13 +36,13 @@ led_config_t g_led_config = {
 #define LED_CENTER_TOP 1
 #define LED_CENTER_BOTTOM 0
 
-#define LAYER_R layer_colors[layer][0] * RGB_MATRIX_DEFAULT_VAL / RGB_MATRIX_MAXIMUM_BRIGHTNESS
-#define LAYER_G layer_colors[layer][1] * RGB_MATRIX_DEFAULT_VAL / RGB_MATRIX_MAXIMUM_BRIGHTNESS
-#define LAYER_B layer_colors[layer][2] * RGB_MATRIX_DEFAULT_VAL / RGB_MATRIX_MAXIMUM_BRIGHTNESS
+#define LAYER_R layer_colors[layer][0] *  RGB_INDICATOR_BRIGHTNESS / 255
+#define LAYER_G layer_colors[layer][1] *  RGB_INDICATOR_BRIGHTNESS / 255
+#define LAYER_B layer_colors[layer][2] *  RGB_INDICATOR_BRIGHTNESS / 255
 
 #define MODS_ACTIVE(mods) \
-    ((get_mods()|get_oneshot_mods()) & MOD_MASK_##mods ? RGB_MATRIX_DEFAULT_VAL:0)
-#define SHIFT_ACTIVE (get_mods() & MOD_MASK_SHIFT ? RGB_MATRIX_DEFAULT_VAL/4:0)
+    ((get_mods()|get_oneshot_mods()) & MOD_MASK_##mods ? RGB_INDICATOR_BRIGHTNESS:0)
+#define SHIFT_ACTIVE (get_mods() & MOD_MASK_SHIFT ? RGB_INDICATOR_BRIGHTNESS/4:0)
 #define MODS_R MODS_ACTIVE(CTRL) + SHIFT_ACTIVE
 #define MODS_G MODS_ACTIVE(GUI) + SHIFT_ACTIVE
 #define MODS_B MODS_ACTIVE(ALT) + SHIFT_ACTIVE
@@ -59,19 +59,19 @@ const uint8_t PROGMEM layer_colors[][3] = {
 };
 
 void set_rgb_matrix_indicators(uint8_t led_min, uint8_t led_max) {
-    #if defined(RGB_MATRIX_LAYER_INDICATOR)
+    #if defined(RGB_LAYER_INDICATOR_ENABLE)
     int layer = get_highest_layer(layer_state|default_layer_state);
-    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, layer_colors[layer][0], layer_colors[layer][1], layer_colors[layer][2]);
+    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, LAYER_R, LAYER_G, LAYER_B);
     /* uprintf("layer RGB: (%u, %u, %u)\n", LAYER_R, LAYER_G, LAYER_B); */
     #else
-    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, RGB_OFF);
+    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_TOP, 0, 0, 0);
     #endif
 
-    #if defined(RGB_MATRIX_MODS_INDICATOR)
+    #if defined(RGB_MODS_INDICATOR_ENABLE)
     RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_BOTTOM, MODS_R, MODS_G, MODS_B);
     /* uprintf("mod RGB: (%u, %u, %u)\n", MODS_R, MODS_G, MODS_B); */
     #else
-    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_BOTTOM, RGB_OFF);
+    RGB_MATRIX_INDICATOR_SET_COLOR(LED_CENTER_BOTTOM, 0, 0, 0);
     #endif
 }
 
