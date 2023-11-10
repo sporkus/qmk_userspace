@@ -134,8 +134,9 @@ void ecsm_eeprom_clear(void) {
 }
 
 void ecsm_ap_inc(void) {
-    int16_t max_offset = 200;
+    int16_t max_offset = 400;
     uprintf("\nIncreasing actuation point (less sensitive)\n");
+    int16_t offset_diff = ACTUATION_OFFSET - RELEASE_OFFSET;
     ecsm_config.actuation_offset += 15;
     ecsm_config.release_offset += 15;
 
@@ -143,6 +144,12 @@ void ecsm_ap_inc(void) {
         uprintf("\nActuation point at maximum\n");
         ecsm_config.actuation_offset = max_offset;
         ecsm_config.release_offset = max_offset;
+
+        if (offset_diff > 0) {
+            ecsm_config.release_offset = ecsm_config.actuation_offset - offset_diff;
+        } else {
+            ecsm_config.actuation_offset = ecsm_config.release_offset - offset_diff;
+        }
     }
 
     ecsm_update_thresholds();
@@ -152,6 +159,7 @@ void ecsm_ap_inc(void) {
 void ecsm_ap_dec(void) {
     int16_t min_offset = 50;
     uprintf("\nDecreasing actuation point (more sensitive)\n");
+    int16_t offset_diff = ACTUATION_OFFSET - RELEASE_OFFSET;
     ecsm_config.actuation_offset -= 15;
     ecsm_config.release_offset -= 15;
 
@@ -159,6 +167,12 @@ void ecsm_ap_dec(void) {
         uprintf("\nActuation point at minimum\n");
         ecsm_config.actuation_offset = min_offset;
         ecsm_config.release_offset = min_offset;
+
+        if (offset_diff > 0) {
+            ecsm_config.actuation_offset = ecsm_config.release_offset + offset_diff;
+        } else {
+            ecsm_config.release_offset = ecsm_config.actuation_offset + offset_diff;
+        }
     }
 
     ecsm_update_thresholds();

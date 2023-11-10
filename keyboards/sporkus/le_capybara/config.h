@@ -24,6 +24,7 @@
 #define RELEASE_OFFSET 170
 #define DEFAULT_IDLE 500      // default value before tuning is completed
 #define ECSM_DEBUG            // enables printing ec config and ADC readings */
+#define EC_MATRIX            // allows ec code to be enabled with ifdef
 
 // enables tuning ec config every power cycle, disable to reduce write cycle to flash
 #define ECSM_TUNE_ON_BOOT
@@ -75,9 +76,17 @@
 #define RGB_MATRIX_LED_COUNT 11
 #define DRIVER_LED_TOTAL RGB_MATRIX_LED_COUNT
 
-// Comment these out if you don't want front indicators leds
-#define RGB_MATRIX_MODS_INDICATOR
-#define RGB_MATRIX_LAYER_INDICATOR
+// Use this option if front leds are not installed and are bypassed with solder jumper
+#define FRONT_LEDS_BYPASS
+#ifdef FRONT_LED_BYPASS
+    #undef RGB_MATRIX_LED_COUNT
+    #define RGB_MATRIX_LED_COUNT 9
+#endif
+
+// The following two options are for disabling the front leds if they're installed.
+// Comment these out to disable them. 
+#define RGB_MODS_INDICATOR_ENABLE
+#define RGB_LAYER_INDICATOR_ENABLE
 
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
