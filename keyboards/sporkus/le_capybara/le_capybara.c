@@ -26,4 +26,5 @@ void keyboard_post_init_kb(void) {
         ecsm_config.configured = 0;
         eeconfig_update_kb_datablock(&ecsm_config);
     #endif
+    keyboard_post_init_user();
 }
