@@ -40,6 +40,7 @@ CMB(RCBR,      KC_RCBR,     80, KC_I,    HM_K)
 CMB(RBRC,      KC_RBRC,     80, KC_O,    HM_L)
 
 //Special functions
+CMB(CAPSWORD, CW_TOGG,      30, HM_F,    HM_J)
 #ifdef EC_MATRIX
 CMB(EC_AP_INC, EC_AP_I,     30, KC_E,    KC_C, KC_I)
 CMB(EC_AP_DEC, EC_AP_D,     30, KC_E,    KC_C, HM_D)
