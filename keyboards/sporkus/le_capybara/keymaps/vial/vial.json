@@ -251,7 +251,7 @@
         {
          "title": "EC config reset",
          "shortName": "EC\nconfig\nreset",
-         "name": "EE_CLR"
+         "name": "EC_CLR"
         }
     ]
 
