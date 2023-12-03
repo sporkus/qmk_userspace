@@ -1,9 +1,8 @@
-#include "capybully.h"
+#include "le_capybara.h"
 
 extern ecsm_config_t ecsm_config;
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    #ifdef EC_MATRIX
     if (record->event.pressed) {
         switch(keycode) {
             case EC_AP_I:
@@ -17,10 +16,10 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false;
         }
     }
-    #endif
 
     return process_record_user(keycode, record);
 };
+
 
 void keyboard_post_init_kb(void) {
     #ifdef ECSM_TUNE_ON_BOOT
