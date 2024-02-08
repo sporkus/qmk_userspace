@@ -6,11 +6,13 @@
     },
     "layouts": {
         "labels": [
-            "Options du pouce",
-            "Classique",
-            "trente-six clés",
-            "Diviser à gauche",
-            "Diviser à droite"
+            [
+                "Options du pouce",
+                "Classique",
+                "trente-six clés",
+                "Diviser à gauche",
+                "Diviser à droite"
+            ]
         ],
         "keymap":
 [
