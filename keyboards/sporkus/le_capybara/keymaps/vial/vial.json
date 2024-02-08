@@ -284,17 +284,17 @@
     },
     "customKeycodes": [
         {
-         "title": "Actuation point increment",
+         "title": "augmentation du point d'actionnement",
          "shortName": "EC\nAPC+",
          "name": "EC_AP_I"
         },
         {
-         "title": "Actuation point decrement",
+         "title": "diminution du point d'actionnement",
          "shortName": "EC\nAPC-",
          "name": "EC_AP_D"
         },
         {
-         "title": "EC config reset",
+         "title": "EC réinitialiser la configuration",
          "shortName": "EC\nconfig\nreset",
          "name": "EC_CLR"
         }
