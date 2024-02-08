@@ -6,10 +6,15 @@
     },
     "layouts": {
         "labels": [
-            "three thumbs"
+            [
+                "Options du pouce",
+                "Classique",
+                "trente-six clés",
+                "Diviser à gauche",
+                "Diviser à droite"
+            ]
         ],
         "keymap":
-        
 [
   [
     {
@@ -139,6 +144,28 @@
   ],
   [
     {
+      "x": -3.25
+    },
+    "3,1\n\n\n0,2",
+    "3,2\n\n\n0,2",
+    {
+      "w": 1.25
+    },
+    "3,3\n\n\n0,2"
+  ],
+  [
+    {
+      "x": -3.25,
+      "w": 1.25
+    },
+    "3,1\n\n\n0,3",
+    {
+      "w": 2
+    },
+    "3,3\n\n\n0,3"
+  ],
+  [
+    {
       "r": -7,
       "rx": 7,
       "y": -0.75,
@@ -232,6 +259,24 @@
     "3,6\n\n\n0,1",
     "3,7\n\n\n0,1",
     "3,8\n\n\n0,1"
+  ],
+  [
+    {
+      "w": 2
+    },
+    "3,6\n\n\n0,2",
+    {
+      "w": 1.25
+    },
+    "3,8\n\n\n0,2"
+  ],
+  [
+    {
+      "w": 1.25
+    },
+    "3,6\n\n\n0,3",
+    "3,7\n\n\n0,3",
+    "3,8\n\n\n0,3"
   ]
 ]
 
@@ -239,17 +284,17 @@
     },
     "customKeycodes": [
         {
-         "title": "Actuation point increment",
+         "title": "augmentation du point d'actionnement",
          "shortName": "EC\nAPC+",
          "name": "EC_AP_I"
         },
         {
-         "title": "Actuation point decrement",
+         "title": "diminution du point d'actionnement",
          "shortName": "EC\nAPC-",
          "name": "EC_AP_D"
         },
         {
-         "title": "EC config reset",
+         "title": "EC réinitialiser la configuration",
          "shortName": "EC\nconfig\nreset",
          "name": "EC_CLR"
         }
