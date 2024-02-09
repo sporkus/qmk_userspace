@@ -16,7 +16,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: set-matrix
         run: echo "matrix=$(find keyboards -regex ".*keymaps" | sed "s|keyboards/\(.*\)/keymaps|\1|"| jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
       - run: echo $GITHUB_OUTPUT
@@ -36,7 +36,7 @@ jobs:
     # github.workspace will also be qmk_firmware root
     steps:
     - name: Checkout QMK
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: qmk/qmk_firmware
         ref: master
@@ -44,7 +44,7 @@ jobs:
 
     # path is relative to github.workspace
     - name: Checkout userspace
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: ${{ env.USERSPACE_PATH }}
         persist-credentials: false
@@ -62,11 +62,21 @@ jobs:
       run: qmk compile -j 0 -kb ${{ matrix.keyboards }} -km ${{ github.actor }}
 
     - name: Archive firmware
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
         retention-days: 60
-        name: qmk_user_firmware
+        name: ${{github.actor}}_${{matrix.keymaps}}_qmk
         path: |
           *.hex
           *.bin
           *.uf2
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: compile-userpace-keymaps
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: qmk_firmware
+          pattern: *_qmk

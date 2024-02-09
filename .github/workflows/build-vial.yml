@@ -1,4 +1,4 @@
-name: vial build 
+name: vial build
 on:
   workflow_dispatch:
   push:
@@ -6,13 +6,13 @@ on:
       - 'keyboards/**'
       - '.github/workflows/*'
 
-jobs: 
+jobs:
   list-vial-keyboards:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: set-matrix
         run: echo "matrix=$(find keyboards -type d -name vial | sed 's/keyboards\///' | sed 's/\/keymaps.*//' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
@@ -29,14 +29,14 @@ jobs:
 
     steps:
     - name: Checkout VIAL QMK
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: vial-kb/vial-qmk
         ref: vial
         submodules: true
 
     - name: Checkout userspace
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: ${{ env.USERSPACE_PATH }}
         persist-credentials: false
@@ -54,11 +54,21 @@ jobs:
       run: make ${{ matrix.keyboards }}:vial
 
     - name: Archive firmware
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
         retention-days: 60
-        name: vial_firmware
+        name: ${{github.actor}}_${{matrix.keymaps}}_vial
         path: |
           *.hex
           *.bin
           *.uf2
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: compile-userpace-keymaps
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: vial_firmware
+          pattern: *_vial
