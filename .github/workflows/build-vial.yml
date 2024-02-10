@@ -7,6 +7,7 @@ on:
       - '.github/workflows/*'
 
 jobs:
+
   list-vial-keyboards:
     runs-on: ubuntu-latest
     outputs:
@@ -53,11 +54,17 @@ jobs:
     - name: compile vial
       run: make ${{ matrix.keyboards }}:vial
 
+    - name: Strip keyboard name 
+      id: keyboard-name
+      run: |
+        echo ${{ matrix.keyboards}} | sed "s|/|_|g"
+        echo "name=${{ matrix.keyboards}}" | sed "s|/|_|g" >> $GITHUB_OUTPUT
+
     - name: Archive firmware
       uses: actions/upload-artifact@v4
       with:
         retention-days: 60
-        name: ${{github.actor}}_${{matrix.keymaps}}_vial
+        name: vial_${{ steps.keyboard-name.outputs.name }}
         path: |
           *.hex
           *.bin
@@ -65,10 +72,9 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
-    needs: compile-userpace-keymaps
+    needs: compile-vial
     steps:
-      - name: Merge Artifacts
+      - name: vial-firmware 
         uses: actions/upload-artifact/merge@v4
-        with:
-          name: vial_firmware
-          pattern: *_vial
+        with: 
+          delete-merged: true
