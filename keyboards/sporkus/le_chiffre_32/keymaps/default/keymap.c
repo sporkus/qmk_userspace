@@ -3,6 +3,7 @@
 
 #include QMK_KEYBOARD_H
 #include "../../rgb.c"
+#include "../../oled.c"
 
 // Just something for quick testing, not meant to be used
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {

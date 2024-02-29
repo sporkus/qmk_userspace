@@ -3,6 +3,7 @@
 
 #include QMK_KEYBOARD_H
 #include "../../rgb.c"
+#include "../../oled.c"
 
 #define HM_A	LSFT_T(KC_A)
 #define HM_S	LALT_T(KC_S)

@@ -4,6 +4,7 @@
 #include "quantum/keycodes.h"
 #include "layout.h"
 #include "../../rgb.c"
+#include "../../oled.c"
 
 // This file should not be called [keyboard].h as it will cause conflict with qmk
 // layout to be used in [keyboard].json | exact layout name defined in keyboards/[keyboard]/info.json
