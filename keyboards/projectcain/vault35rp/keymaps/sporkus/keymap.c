@@ -13,12 +13,12 @@
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_w(
         LEFT_ROW1(_BASE),            RIGHT_ROW1(_BASE), KC_BSPC,\
-        HRML(LEFT_ROW2(_BASE)),      HRMR(RIGHT_ROW2(_BASE)),   \
+        LEFT_ROW2(_BASE),      HRMR(RIGHT_ROW2(_BASE)),   \
         BRML(LEFT_ROW3(_BASE)),      BRMR(RIGHT_ROW3(_BASE)),   \
         KC_LCTL, LEFT_THUMB(_BASE),  XXX,  RIGHT_THUMB(_BASE), KC_LGUI
     ),
     [1] = LAYOUT_w(
-        LEFT_ROW1(_NUM),             RIGHT_ROW1(_NUM), DELWORD,\
+        LEFT_ROW1(_NUM),             RIGHT_ROW1(_NUM), C(KC_BSPC),\
         LEFT_ROW2(_NUM),             RIGHT_ROW2(_NUM),         \
         LEFT_ROW3(_NUM),             RIGHT_ROW3(_NUM),         \
         _______, LEFT_THUMB(_NUM), XXX, RIGHT_THUMB(_NUM), _______

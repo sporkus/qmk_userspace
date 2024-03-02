@@ -1,4 +1,5 @@
 //name,        output,    term, keys
+CMB(osms,      OSM(MOD_LSFT),  30,  KC_B,  KC_N)
 
 //horizontal top
 CMB(TAB2,      KC_TAB,      25, KC_Q,    KC_W)
