@@ -13,7 +13,7 @@
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_w(
         LEFT_ROW1(_BASE),            RIGHT_ROW1(_BASE), KC_BSPC,\
-        LEFT_ROW2(_BASE),      HRMR(RIGHT_ROW2(_BASE)),   \
+        HRML(LEFT_ROW2(_BASE)),      HRMR(RIGHT_ROW2(_BASE)),   \
         BRML(LEFT_ROW3(_BASE)),      BRMR(RIGHT_ROW3(_BASE)),   \
         KC_LCTL, LEFT_THUMB(_BASE),  XXX,  RIGHT_THUMB(_BASE), KC_LGUI
     ),
