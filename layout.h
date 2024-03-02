@@ -41,6 +41,7 @@ enum custom_keycodes {
 #define SA_UP S(A(KC_UP))
 #define SA_DN S(A(KC_DOWN))
 #define GUI_GRV G(KC_GRV)
+#define DELWORD C(KC_BSPC)
 
 // Layers
 enum layers {BASE, NUM, NAV, FN};
