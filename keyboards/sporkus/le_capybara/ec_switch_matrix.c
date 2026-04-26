@@ -251,16 +251,32 @@ bool ecsm_update_key(matrix_row_t* current_row, uint8_t row, uint8_t col, uint16
 
 void ecsm_print_matrix(matrix_row_t current_matrix[]) {
     uprintln();
+    uprintf("[ADC]    ");
+    for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
+    uprintln();
+
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
-        uprintf("[ADC readings]: ");
+        uprintf("  R%d:  ", i);
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
             bool key_pressed = (current_matrix[i] >> j) & 1;
-
             if (key_pressed) {
-                uprintf("%s%4u%s," , red, ecsm_sw_value[i][j], reset);
+                uprintf("%s%4u%s ", red, ecsm_sw_value[i][j], reset);
             } else {
-                uprintf("%4u," , ecsm_sw_value[i][j]);
+                uprintf("%4u ", ecsm_sw_value[i][j]);
             }
+        }
+        uprintln();
+    }
+
+    uprintf("[Margin] ");
+    for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
+    uprintln();
+
+    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        uprintf("  R%d:  ", i);
+        for (int j = 0; j < EC_MATRIX_COLS; j++) {
+            int16_t margin = (int16_t)ecsm_sw_value[i][j] - ecsm_tuning_data[i][j];
+            uprintf("%+4d ", margin);
         }
         uprintln();
     }
@@ -269,33 +285,30 @@ void ecsm_print_matrix(matrix_row_t current_matrix[]) {
 
 void ecsm_print_debug(void) {
     uprintln();
-    bool tuned = ecsm_config.configured;
+    uprintf("Actuation/release offset: %d, %d  configured: %s\n",
+            ecsm_config.actuation_offset, ecsm_config.release_offset,
+            ecsm_config.configured ? "YES" : "NO (tuning...)");
 
-    uprintf("Actuation/release offset: %u, %u\n", ecsm_config.actuation_offset, ecsm_config.release_offset);
+    uprintf("[Idle]   ");
+    for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
+    uprintln();
 
-    if (!tuned) {
-        uprintln("EC config tuning....");
-    }
-
-    uprintf("Current idle readings:\n");
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        uprintf("  R%d:  ", i);
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
-            if (!tuned) {
-                uprintf("%4u  ", ecsm_tuning_data[i][j]);
-            } else {
-                uprintf("%4u  ", ecsm_config.idle[i][j]);
-            }
-
+            uprintf("%4u ", ecsm_tuning_data[i][j]);
         }
         uprintln();
     }
 
-
-    uprintf("\nActuation points:\n");
+    uprintf("\n[Act]    ");
+    for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
+    uprintln();
 
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        uprintf("  R%d:  ", i);
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
-            uprintf("%4u  ", ecsm_thresholds[i][j].actuation);
+            uprintf("%4u ", ecsm_thresholds[i][j].actuation);
         }
         uprintln();
     }
