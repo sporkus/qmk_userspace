@@ -1,42 +1,60 @@
 # Le Capybara
 
-Electrocaptive sensing (Topre/Niz) PCB in the Le Chiffre laytout
+Electrocapacitive sensing (Topre/Niz) PCB in the Le Chiffre layout.
 
 * Keyboard Maintainer: [sporkus](https://github.com/sporkus)
 * Hardware Supported: STM32F072
-* Hardware design: (https://github.com/sporkus/le_capybara_keyboard)
+* Hardware design: https://github.com/sporkus/le_capybara_keyboard
 
-Make example for this keyboard (after setting up your build environment):
-
-    qmk compile -kb sporkus/le_capybara -km default
-
-Flashing example for this keyboard:
-
-    qmk flash -kb sporkus/le_capybara -km default
+```
+qmk compile -kb sporkus/le_capybara -km sporkus
+qmk flash   -kb sporkus/le_capybara -km sporkus
+```
 
 ## Bootloader
 
 Enter the DFU bootloader in 3 ways:
-* **Bootmagic reset**: Hold down the key at (0,0) in the matrix (the top left key) and plug in the keyboard
-* **Physical DFU header**: Short the pads while powering up the keyboard
-* **Keycode in layout**: Press the key mapped to `QK_BOOT` if it is available
+* **Bootmagic reset**: Hold the top-left key while plugging in
+* **Physical DFU header**: Short the pads while powering up
+* **Keycode**: Press `QK_BOOT` if mapped (combo: Q+W+O+P)
 
-See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_tools) and the [make instructions](https://docs.qmk.fm/#/getting_started_make_guide) for more information. Brand new to QMK? Start with our [Complete Newbs Guide](https://docs.qmk.fm/#/newbs).
+## Custom matrix driver (EC)
 
-## EC Matrix functions
+This keyboard uses electrocapacitive sensing instead of standard switch contacts. `rules.mk` sets:
 
-#### Tuning
+```makefile
+CUSTOM_MATRIX = lite
+SRC += matrix.c analog.c ec_switch_matrix.c
+```
 
-The baseline for each key is different. Even if you use the same parts, they can change between assemblies. The very first time firmware is flashed, a quick auto tuning will be done (about half a minute). As long as you don't intentionally feather the keys, it should be immediately usable and not affect the tuning result.
+`CUSTOM_MATRIX = lite` replaces QMK's GPIO matrix scan with custom ADC reads while keeping QMK's debounce logic. The three source files handle: analog discharge sequencing → ADC sampling → threshold comparison → key state.
 
-To re-tune after assembly, you can either use the keycode `EC_CLR` to reset the configuration.
-Actuation point adjustment
+## EC tuning
 
-Use the keycodes `EC_AP_I`/`EC_AP_D` to increase/decrease the actuation point.
-Advanced users
+Each key has a different capacitive baseline depending on assembly. On first flash, auto-tuning runs (~30 seconds) to measure idle values per key. Hold keys still during this.
 
-More options can be enabled in the config.h file.
+| Keycode   | Action                                      |
+|-----------|---------------------------------------------|
+| `EC_AP_I` | Increase actuation offset (more travel)     |
+| `EC_AP_D` | Decrease actuation offset (less travel)     |
+| `EC_CLR`  | Reset stored EC config, re-tune on next boot |
+| `EE_CLR`  | Full EEPROM reset                           |
 
-- `ECSM_TUNE_ON_BOOT`: re-tune on every boot. It's not really necessary and increases write cycles to the flash memory.
-- `ECSM_DEBUG`: prints EC config and readings in console.
+Actuation threshold = `idle + ACTUATION_OFFSET`. Configured in `config.h`:
+
+```c
+#define ACTUATION_OFFSET 150   // tweak for feel
+#define RELEASE_OFFSET   170   // should be >= ACTUATION_OFFSET
+#define ECSM_TUNE_ON_BOOT      // re-tune every boot (more flash writes)
+#define ECSM_DEBUG             // print EC readings to console
+#define EC_MATRIX              // guard for #ifdef EC_MATRIX in shared code
+```
+
+## RGB
+
+11 LEDs (9 underglow + 2 front indicators). If front LEDs are not installed and bypassed with the solder jumper, define `FRONT_LEDS_BYPASS` in `config.h` to reduce LED count to 9.
+
+Front LEDs serve as indicators when enabled:
+- `RGB_MODS_INDICATOR_ENABLE` — lights on mod keys while held
+- `RGB_LAYER_INDICATOR_ENABLE` — shows active layer
 
