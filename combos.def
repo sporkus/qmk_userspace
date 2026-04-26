@@ -44,6 +44,7 @@ CMB(CAPSWORD, CW_TOGG,      30, HM_F,    HM_J)
 #ifdef EC_MATRIX
 CMB(EC_AP_INC, EC_AP_I,     30, KC_E,    KC_C, KC_I)
 CMB(EC_AP_DEC, EC_AP_D,     30, KC_E,    KC_C, HM_D)
+CMB(EC_CAL_CB, EC_CAL,      30, KC_E,    KC_C, KC_V)
 #endif
 CMB(EE_CLR,    EE_CLR,      30, KC_E,    KC_C, KC_R)
 

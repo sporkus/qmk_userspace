@@ -34,6 +34,12 @@ static ecsm_threshold_t ecsm_thresholds[EC_MATRIX_ROWS][EC_MATRIX_COLS];
 static int16_t ecsm_tuning_data[EC_MATRIX_ROWS][EC_MATRIX_COLS];
 static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reaches 0
 
+bool ecsm_bottoming_cal_active = false;
+static bool     ecsm_pressing[EC_MATRIX_ROWS][EC_MATRIX_COLS];     // key currently above cal threshold
+static uint16_t ecsm_reported_max[EC_MATRIX_ROWS][EC_MATRIX_COLS]; // last printed max per key
+static bool ecsm_cal_saved_debug;
+static bool ecsm_cal_saved_debug_kb;
+
 /* fancy printing */
 const char* red = "\x1b[31m";
 const char* reset = "\x1b[0m";
@@ -93,12 +99,22 @@ static inline void init_mux(void) {
 
 void ecsm_config_init(void) {
     eeconfig_read_kb_datablock(&ecsm_config);
+
+    // Clamp stored offsets — catches corrupted values from pre-percentage firmware
+    if (ecsm_config.actuation_offset > 95 || ecsm_config.release_offset > 95
+            || ecsm_config.actuation_offset < 0 || ecsm_config.release_offset < 0) {
+        uprintf("EC offsets out of range (%d, %d), resetting to defaults\n",
+                ecsm_config.actuation_offset, ecsm_config.release_offset);
+        ecsm_config.actuation_offset = ACTUATION_DEPTH;
+        ecsm_config.release_offset   = RELEASE_DEPTH;
+    }
+
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
             if (! ecsm_config.configured) {
                 // fallback to default values
-                ecsm_config.actuation_offset = ACTUATION_OFFSET;
-                ecsm_config.release_offset = RELEASE_OFFSET;
+                ecsm_config.actuation_offset = ACTUATION_DEPTH;
+                ecsm_config.release_offset = RELEASE_DEPTH;
                 ecsm_config.idle[i][j] = DEFAULT_IDLE;
             }
             ecsm_tuning_data[i][j] = ecsm_config.idle[i][j];
@@ -122,11 +138,13 @@ void ecsm_config_update(void) {
 void ecsm_eeprom_clear(void) {
     uprintln("\nClearing EC config");
     ecsm_config.configured = 0;
-    ecsm_config.actuation_offset = ACTUATION_OFFSET;
-    ecsm_config.release_offset = RELEASE_OFFSET;
+    ecsm_config.bottoming_configured = false;
+    ecsm_config.actuation_offset = ACTUATION_DEPTH;
+    ecsm_config.release_offset = RELEASE_DEPTH;
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
             ecsm_config.idle[i][j] = 0;
+            ecsm_config.bottoming[i][j] = 0;
         }
     }
     eeconfig_update_kb_datablock(&ecsm_config);
@@ -134,11 +152,12 @@ void ecsm_eeprom_clear(void) {
 }
 
 void ecsm_ap_inc(void) {
-    int16_t max_offset = 400;
-    uprintf("\nIncreasing actuation point (less sensitive)\n");
-    int16_t offset_diff = ACTUATION_OFFSET - RELEASE_OFFSET;
-    ecsm_config.actuation_offset += 15;
-    ecsm_config.release_offset += 15;
+    int16_t max_offset = 95;
+    int16_t step = 5;
+    uprintf("\nIncreasing actuation depth (less sensitive)\n");
+    int16_t offset_diff = ecsm_config.actuation_offset - ecsm_config.release_offset;
+    ecsm_config.actuation_offset += step;
+    ecsm_config.release_offset += step;
 
     if (ecsm_config.actuation_offset > max_offset || ecsm_config.release_offset > max_offset) {
         uprintf("\nActuation point at maximum\n");
@@ -157,11 +176,12 @@ void ecsm_ap_inc(void) {
 }
 
 void ecsm_ap_dec(void) {
-    int16_t min_offset = 50;
-    uprintf("\nDecreasing actuation point (more sensitive)\n");
-    int16_t offset_diff = ACTUATION_OFFSET - RELEASE_OFFSET;
-    ecsm_config.actuation_offset -= 15;
-    ecsm_config.release_offset -= 15;
+    int16_t min_offset = 5;
+    int16_t step = 5;
+    uprintf("\nDecreasing actuation depth (more sensitive)\n");
+    int16_t offset_diff = ecsm_config.actuation_offset - ecsm_config.release_offset;
+    ecsm_config.actuation_offset -= step;
+    ecsm_config.release_offset -= step;
 
     if (ecsm_config.actuation_offset < min_offset || ecsm_config.release_offset < min_offset) {
         uprintf("\nActuation point at minimum\n");
@@ -196,7 +216,8 @@ void ecsm_init(void) {
 }
 
 void ecsm_update_tuning_data(int16_t new_value, uint8_t row, uint8_t col) {
-    if (new_value < DEFAULT_IDLE + ACTUATION_OFFSET) {
+    int16_t idle = ecsm_tuning_data[row][col];
+    if (new_value < idle + (DEFAULT_BOTTOM_ADC - idle) * ACTUATION_DEPTH / 100) {
         float curr = ecsm_tuning_data[row][col];
         float adjusted = curr + ((float)new_value - curr) * 0.02;
         ecsm_tuning_data[row][col] = round(adjusted);
@@ -206,9 +227,18 @@ void ecsm_update_tuning_data(int16_t new_value, uint8_t row, uint8_t col) {
 void ecsm_update_thresholds(void) {
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
-            int16_t idle = ecsm_tuning_data[i][j];
-            ecsm_thresholds[i][j].actuation =  idle + ecsm_config.actuation_offset;
-            ecsm_thresholds[i][j].release = idle + ecsm_config.release_offset;
+            int16_t idle          = ecsm_tuning_data[i][j];
+            int16_t default_travel = DEFAULT_BOTTOM_ADC - idle;
+            int16_t travel        = (int16_t)ecsm_config.bottoming[i][j] - idle;
+            int16_t min_travel    = default_travel * CALIBRATION_MIN_TRAVEL / 100;
+
+            if (!ecsm_config.bottoming_configured || travel < min_travel) {
+                travel = default_travel;
+            }
+
+            // Offsets are always percentages (0-100) of travel
+            ecsm_thresholds[i][j].actuation = idle + (int32_t)ecsm_config.actuation_offset * travel / 100;
+            ecsm_thresholds[i][j].release   = idle + (int32_t)ecsm_config.release_offset   * travel / 100;
         }
     }
 }
@@ -285,9 +315,10 @@ void ecsm_print_matrix(matrix_row_t current_matrix[]) {
 
 void ecsm_print_debug(void) {
     uprintln();
-    uprintf("Actuation/release offset: %d, %d  configured: %s\n",
+    uprintf("Actuation/release depth: %d, %d  [%s]  bottoming: %s\n",
             ecsm_config.actuation_offset, ecsm_config.release_offset,
-            ecsm_config.configured ? "YES" : "NO (tuning...)");
+            ecsm_config.bottoming_configured ? "% of travel" : "raw ADC units",
+            ecsm_config.bottoming_configured ? "YES" : "NO");
 
     uprintf("[Idle]   ");
     for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
@@ -299,6 +330,20 @@ void ecsm_print_debug(void) {
             uprintf("%4u ", ecsm_tuning_data[i][j]);
         }
         uprintln();
+    }
+
+    if (ecsm_config.bottoming_configured) {
+        uprintf("\n[Bottom] ");
+        for (int j = 0; j < EC_MATRIX_COLS; j++) uprintf("C%-3d ", j);
+        uprintln();
+
+        for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+            uprintf("  R%d:  ", i);
+            for (int j = 0; j < EC_MATRIX_COLS; j++) {
+                uprintf("%4u ", ecsm_config.bottoming[i][j]);
+            }
+            uprintln();
+        }
     }
 
     uprintf("\n[Act]    ");
@@ -313,6 +358,45 @@ void ecsm_print_debug(void) {
         uprintln();
     }
     uprintln();
+}
+
+static void ecsm_bottoming_cal_start(void) {
+    if (!ecsm_config.configured) {
+        uprintln("Bottoming calibration blocked: idle tuning not yet complete.");
+        return;
+    }
+    memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
+    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        for (int j = 0; j < EC_MATRIX_COLS; j++) {
+            ecsm_config.bottoming[i][j] = ecsm_tuning_data[i][j];
+            ecsm_reported_max[i][j]     = ecsm_tuning_data[i][j];
+        }
+    }
+    ecsm_cal_saved_debug    = debug_config.enable;
+    ecsm_cal_saved_debug_kb = debug_config.keyboard;
+    debug_config.enable   = false;
+    debug_config.keyboard = false;
+    ecsm_bottoming_cal_active = true;
+    uprintln("Bottoming calibration started. Bottom all keys then press EC_CAL again.");
+}
+
+static void ecsm_bottoming_cal_save(void) {
+    ecsm_bottoming_cal_active = false;
+    debug_config.enable   = ecsm_cal_saved_debug;
+    debug_config.keyboard = ecsm_cal_saved_debug_kb;
+    ecsm_config.bottoming_configured = true;
+
+    ecsm_update_thresholds();
+    ecsm_config_update();
+    uprintln("Bottoming calibration saved.");
+}
+
+void ecsm_bottoming_cal_toggle(void) {
+    if (ecsm_bottoming_cal_active) {
+        ecsm_bottoming_cal_save();
+    } else {
+        ecsm_bottoming_cal_start();
+    }
 }
 
 // Scan key values and update matrix state
@@ -336,6 +420,25 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                     ecsm_update_thresholds();
                     ecsm_config.configured = true;
                     ecsm_config_update();
+                }
+            }
+
+            if (ecsm_bottoming_cal_active) {
+                int16_t idle = ecsm_tuning_data[row][col];
+                bool above = adc > (uint16_t)(idle + (DEFAULT_BOTTOM_ADC - idle) * CALIBRATION_MIN_TRAVEL / 100);
+
+                if (adc > ecsm_config.bottoming[row][col])
+                    ecsm_config.bottoming[row][col] = adc;
+
+                if (above && !ecsm_pressing[row][col]) {
+                    ecsm_pressing[row][col] = true;
+                } else if (!above && ecsm_pressing[row][col]) {
+                    // key released — report if max improved since last print
+                    ecsm_pressing[row][col] = false;
+                    if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
+                        ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
+                        uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
+                    }
                 }
             }
         }

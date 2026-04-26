@@ -58,7 +58,7 @@ bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     #ifdef ECSM_DEBUG
     static int cnt = 0;
 
-    if (cnt++ == 500) {
+    if (cnt++ == 500 && !ecsm_bottoming_cal_active) {
         cnt = 0;
         ecsm_print_debug();
         ecsm_print_matrix(current_matrix);

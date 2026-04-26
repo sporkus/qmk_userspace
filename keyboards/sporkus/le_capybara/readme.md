@@ -33,18 +33,21 @@ SRC += matrix.c analog.c ec_switch_matrix.c
 
 Each key has a different capacitive baseline depending on assembly. On first flash, auto-tuning runs (~30 seconds) to measure idle values per key. Hold keys still during this.
 
-| Keycode   | Action                                      |
-|-----------|---------------------------------------------|
-| `EC_AP_I` | Increase actuation offset (more travel)     |
-| `EC_AP_D` | Decrease actuation offset (less travel)     |
-| `EC_CLR`  | Reset stored EC config, re-tune on next boot |
-| `EE_CLR`  | Full EEPROM reset                           |
+After running bottoming calibration (`EC_CAL`), actuation depth is expressed as a percentage of per-key travel — e.g. 25% fires the key a quarter of the way down.
 
-Actuation threshold = `idle + ACTUATION_OFFSET`. Configured in `config.h`:
+| Keycode                   | Action                                              |
+|---------------------------|-----------------------------------------------------|
+| `EC_DEEPER` / `EC_AP_I`   | Require deeper press to actuate (less sensitive)    |
+| `EC_SHALLOWER` / `EC_AP_D`| Require shallower press to actuate (more sensitive) |
+| `EC_CAL`                  | Toggle bottoming calibration (start / save)         |
+| `EC_CLR`                  | Reset stored EC config, re-tune on next boot        |
+| `EE_CLR`                  | Full EEPROM reset                                   |
+
+Configured in `config.h`:
 
 ```c
-#define ACTUATION_OFFSET 150   // tweak for feel
-#define RELEASE_OFFSET   170   // should be >= ACTUATION_OFFSET
+#define ACTUATION_DEPTH 50     // 50% of key travel (after bottoming cal), or raw ADC units before
+#define RELEASE_DEPTH   40     // 40% — shallower than actuation, must lift past here to de-actuate
 #define ECSM_TUNE_ON_BOOT      // re-tune every boot (more flash writes)
 #define ECSM_DEBUG             // print EC readings to console
 #define EC_MATRIX              // guard for #ifdef EC_MATRIX in shared code
