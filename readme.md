@@ -1,6 +1,10 @@
 Personal QMK Userspace
 =========================
 
+## How it works
+- local qmk 
+
+
 ## Features
 * Github action build with latest qmk and vial
 * Combo and key override definition files
@@ -11,3 +15,5 @@ Personal QMK Userspace
 * sadekbaroudi
 * geutreur
 * replicaJunction
+
+
