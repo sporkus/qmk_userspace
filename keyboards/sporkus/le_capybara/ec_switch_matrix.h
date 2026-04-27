@@ -38,8 +38,12 @@ typedef struct
 
 ecsm_config_t ecsm_config;
 extern bool ecsm_bottoming_cal_active;
+extern bool ecsm_tui_active;
 
-/// @brief Set default actuation points from presistent storage 
+/// @brief Toggle structured ADC streaming for the TUI tool
+void ecsm_tui_toggle(void);
+
+/// @brief Set default actuation points from presistent storage
 void ecsm_config_init(void);
 
 /// @brief Increment acutation point depth/travel distance

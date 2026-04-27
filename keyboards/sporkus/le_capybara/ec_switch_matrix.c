@@ -35,6 +35,9 @@ static int16_t ecsm_tuning_data[EC_MATRIX_ROWS][EC_MATRIX_COLS];
 static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reaches 0
 
 bool ecsm_bottoming_cal_active = false;
+bool ecsm_tui_active = false;
+static uint16_t ecsm_tui_scan_count = 0;
+static uint16_t ecsm_tui_cfg_count = 0;
 static bool     ecsm_pressing[EC_MATRIX_ROWS][EC_MATRIX_COLS];     // key currently above cal threshold
 static uint16_t ecsm_reported_max[EC_MATRIX_ROWS][EC_MATRIX_COLS]; // last printed max per key
 static bool ecsm_cal_saved_debug;
@@ -43,6 +46,44 @@ static bool ecsm_cal_saved_debug_kb;
 /* fancy printing */
 const char* red = "\x1b[31m";
 const char* reset = "\x1b[0m";
+
+/* --- structured logging for ec_calibration TUI --- */
+static void ecsm_print_structured(void) {
+    uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d\n",
+        EC_MATRIX_ROWS, EC_MATRIX_COLS,
+        ecsm_config.actuation_offset, ecsm_config.release_offset,
+        CALIBRATION_MIN_TRAVEL, DEFAULT_BOTTOM_ADC,
+        ecsm_config.configured ? 1 : 0,
+        ecsm_config.bottoming_configured ? 1 : 0);
+
+    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        uprintf("EC_IDLE:%d:", i);
+        for (int j = 0; j < EC_MATRIX_COLS; j++)
+            uprintf(j ? ",%d" : "%d", ecsm_tuning_data[i][j]);
+        uprintln();
+    }
+
+    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
+        uprintf("EC_BOTTOM:%d:", i);
+        for (int j = 0; j < EC_MATRIX_COLS; j++)
+            uprintf(j ? ",%d" : "%d", ecsm_config.bottoming[i][j]);
+        uprintln();
+    }
+}
+
+void ecsm_tui_toggle(void) {
+    ecsm_tui_active = !ecsm_tui_active;
+    if (ecsm_tui_active) {
+        uprintln("EC TUI mode started");
+        uprintf("EC_EVENT:tuiStarted\n");
+        ecsm_print_structured();
+    } else {
+        uprintln("EC TUI mode stopped");
+        uprintf("EC_EVENT:tuiStopped\n");
+        ecsm_update_thresholds();
+        ecsm_config_update();
+    }
+}
 
 static inline void discharge_capacitor(void) {
     writePinLow(DISCHARGE_PIN);
@@ -133,6 +174,7 @@ void ecsm_config_update(void) {
     uprintf("Writing current actuation points to presistent storage\n");
     eeconfig_update_kb_datablock(&ecsm_config);
     ecsm_print_debug();
+    ecsm_print_structured();
 }
 
 void ecsm_eeprom_clear(void) {
@@ -378,6 +420,8 @@ static void ecsm_bottoming_cal_start(void) {
     debug_config.keyboard = false;
     ecsm_bottoming_cal_active = true;
     uprintln("Bottoming calibration started. Bottom all keys then press EC_CAL again.");
+    uprintf("EC_EVENT:calStarted\n");
+    ecsm_print_structured();
 }
 
 static void ecsm_bottoming_cal_save(void) {
@@ -389,6 +433,7 @@ static void ecsm_bottoming_cal_save(void) {
     ecsm_update_thresholds();
     ecsm_config_update();
     uprintln("Bottoming calibration saved.");
+    uprintf("EC_EVENT:calSaved\n");
 }
 
 void ecsm_bottoming_cal_toggle(void) {
@@ -421,6 +466,13 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                     ecsm_config.configured = true;
                     ecsm_config_update();
                 }
+            } else if (ecsm_tui_active) {
+                int16_t idle = ecsm_tuning_data[row][col];
+                int16_t rest_limit = idle + (DEFAULT_BOTTOM_ADC - idle) * 3 / 100;
+                if (adc < (uint16_t)rest_limit) {
+                    float adjusted = idle + ((float)adc - idle) * 0.02f;
+                    ecsm_tuning_data[row][col] = (int16_t)roundf(adjusted);
+                }
             }
 
             if (ecsm_bottoming_cal_active) {
@@ -438,9 +490,26 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                     if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
                         ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
                         uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
+                        uprintf("EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
                     }
                 }
             }
+        }
+    }
+
+    /* --- structured ADC streaming for ec_calibration TUI --- */
+    if (ecsm_tui_active && ++ecsm_tui_scan_count >= 20) {
+        ecsm_tui_scan_count = 0;
+        for (int row = 0; row < EC_MATRIX_ROWS; row++) {
+            uprintf("EC_ADC:%d:", row);
+            for (int c = 0; c < EC_MATRIX_COLS; c++)
+                uprintf(c ? ",%d" : "%d", ecsm_sw_value[row][c]);
+            uprintln();
+        }
+        if (++ecsm_tui_cfg_count >= 50) {
+            ecsm_tui_cfg_count = 0;
+            ecsm_update_thresholds();
+            ecsm_print_structured();
         }
     }
 
