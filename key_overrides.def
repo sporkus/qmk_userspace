@@ -1,4 +1,5 @@
 //KEY_OVERRIDE(name,       mod_mask,       keycode,     modded_keycode
+// this block works
 KEY_OVERRIDE(rcbr_lcbr,    MOD_MASK_SHIFT, KC_RCBR,     KC_LCBR)
 KEY_OVERRIDE(rprn_lprn,    MOD_MASK_SHIFT, KC_RPRN,     KC_LPRN)
 KEY_OVERRIDE(rbrc_lbrc,    MOD_MASK_SHIFT, KC_RBRC,     KC_LBRC)
@@ -6,4 +7,24 @@ KEY_OVERRIDE(gt_lt,        MOD_MASK_SHIFT, KC_GT,       KC_LT)
 KEY_OVERRIDE(comma_scln,   MOD_MASK_SHIFT, KC_COMMA,    KC_SCLN)
 KEY_OVERRIDE(period_coln,  MOD_MASK_SHIFT, KC_DOT,      KC_COLON)
 
+// Win+L (lock screen) cannot be blocked here: key overrides hook into process_record,
+// but mod-tap tap resolution (HM_L -> KC_L) bypasses it via add_key() directly.
+// Handled in sporkus.c process_record_user with IS_QK_MOD_TAP check instead.
 
+/* Mask reference: --------------------------------------------
+MOD_MASK_CTRL
+MOD_MASK_SHIFT
+MOD_MASK_ALT
+MOD_MASK_GUI
+MOD_MASK_CS
+MOD_MASK_CA
+MOD_MASK_CG
+MOD_MASK_SA
+MOD_MASK_SG
+MOD_MASK_AG
+MOD_MASK_CSA
+MOD_MASK_CSG
+MOD_MASK_CAG
+MOD_MASK_SAG
+MOD_MASK_CSAG
+------------------------------------------------------------- */

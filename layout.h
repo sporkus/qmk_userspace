@@ -16,17 +16,17 @@ enum custom_keycodes {
 };
 
 // Mod tap macros
-#define HM_A	LSFT_T(KC_A)
-#define HM_S	LALT_T(KC_S)
-#define HM_D	LGUI_T(KC_D)
-#define HM_F	LCTL_T(KC_F)
-#define HM_J	LCTL_T(KC_J)
-#define HM_K	LGUI_T(KC_K)
-#define HM_L	LALT_T(KC_L)
-#define HM_QUOT	LSFT_T(KC_QUOT)
-#define SFT_ENT RSFT_T(KC_ENT)
-#define SFT_Z    LSFT_T(KC_Z)
-#define SFT_SLSH RSFT_T(KC_SLSH)
+#define HM_A       LSFT_T(KC_A)
+#define HM_S       LALT_T(KC_S)
+#define HM_D       LGUI_T(KC_D)
+#define HM_F       LCTL_T(KC_F)
+#define HM_J       RCTL_T(KC_J)
+#define HM_K       RGUI_T(KC_K)
+#define HM_L       RALT_T(KC_L)
+#define KC_QUOT    LSFT_T(KC_QUOT)
+#define SFT_ENT    RSFT_T(KC_ENT)
+#define SFT_Z      LSFT_T(KC_Z)
+#define SFT_SLSH   RSFT_T(KC_SLSH)
 
 #define HRML(halfrow) _HRML(halfrow)
 #define HRMR(halfrow) _HRMR(halfrow)

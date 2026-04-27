@@ -70,8 +70,8 @@ void keyboard_post_init_user(void) {
 // return false to interrupt normal processing
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     #ifdef CONSOLE_ENABLE
-        uprintf("[%u, %u] kc: 0x%04X, pressed: %X, time: %5u, int: %u, tap.count: %u\n",
-                record->event.key.row, record->event.key.col, keycode,  record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
+        uprintf("[%u, %u] kc: 0x%04X, mods: 0x%02X, pressed: %X, time: %5u, int: %u, tap.count: %u\n",
+                record->event.key.row, record->event.key.col, keycode, get_mods(), record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
     #endif
 
     if (!process_global_quick_tap(keycode, record)) {return false; }
@@ -83,6 +83,19 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 tap_code16(KC_TILD);
                 return false;
             }
+            break;
+        // Block Win+L on Windows (locks screen); key overrides can't intercept mod-tap taps.
+        // Inject a brief Ctrl while Win is held so Windows doesn't see bare Win↓…Win↑
+        // and open Start menu when L is discarded.
+        case RALT_T(KC_L):
+            if (record->event.pressed && record->tap.count
+                    && (get_mods() & MOD_MASK_GUI)
+                    && detected_host_os() == OS_WINDOWS) {
+                register_code(KC_LCTL);
+                unregister_code(KC_LCTL);
+                return false;
+            }
+            break;
     }
 
     update_swapper(
