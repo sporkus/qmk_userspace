@@ -38,7 +38,7 @@ body {
   font-weight: bold;
 }
 
-#connect-btn, #disconnect-btn {
+#connect-btn, #disconnect-btn, #stream-btn, #cal-btn {
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
   padding: 4px 14px;
@@ -59,6 +59,17 @@ body {
   display: none;
 }
 #disconnect-btn:hover { background: #1a1a1a; }
+
+#cal-btn {
+  display: none;
+  color: #888;
+  border-color: #555;
+}
+#cal-btn:hover { background: #1a1a1a; }
+#cal-btn.active {
+  color: #FF8800;
+  border-color: #FF8800;
+}
 
 #error {
   color: #FF4444;
@@ -135,14 +146,15 @@ td.adc-val   { color: #aaaaaa; }
 <div id="toolbar">
   <span id="title"> EC Calibration </span>
   <span id="status">○  not connected</span>
-  <button id="connect-btn">Connect Keyboard</button>
-  <button id="disconnect-btn">Disconnect</button>
+  <button id="connect-btn" tabindex="-1">Connect Keyboard</button>
+  <button id="disconnect-btn" tabindex="-1">Disconnect</button>
+  <button id="cal-btn" tabindex="-1">Calibrate</button>
 </div>
 
 <div id="error"></div>
 <div id="config-line"></div>
 <div id="tables"></div>
-<div id="help">EC_TUI = toggle stream &nbsp;·&nbsp; EC_CAL = toggle calibration</div>
+<div id="help">EC_TUI = toggle stream &nbsp;·&nbsp; EC_CAL / Calibrate button = toggle calibration</div>
 
 <script>
 'use strict';
@@ -316,13 +328,13 @@ function render() {
 
   if (!s.ready) {
     statusEl.className   = '';
-    statusEl.textContent = connected
-      ? '○  press EC_TUI on keyboard to stream data'
-      : '○  not connected';
+    statusEl.textContent = '○  not connected';
     configEl.textContent = '';
     tablesEl.innerHTML   = '';
     return;
   }
+
+  const calBtn = document.getElementById('cal-btn');
 
   if (s.calPhase === 1) {
     statusEl.className   = 'active';
@@ -337,6 +349,9 @@ function render() {
     statusEl.className   = '';
     statusEl.textContent = '○ press EC_TUI on keyboard to stream data';
   }
+
+  calBtn.className = s.calMode ? 'active' : '';
+  calBtn.textContent = s.calMode ? 'Save Cal' : 'Calibrate';
 
   const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
   configEl.textContent =
@@ -419,9 +434,14 @@ function renderTravelRows(s) {
 
 // ─── Web HID ──────────────────────────────────────────────────────────────────
 
-let device    = null;
-let connected = false;
-let lineBuf   = '';
+// EC tool HID commands - must match le_capybara.c
+const EC_HID_KEEPALIVE  = 0x00;
+const EC_HID_CAL_TOGGLE = 0x02;
+
+let hidDevice       = null;
+let connected       = false;
+let lineBuf         = '';
+let keepaliveTimer  = null;
 
 async function connect() {
   const errEl = document.getElementById('error');
@@ -434,23 +454,26 @@ async function connect() {
 
   try {
     const devices = await navigator.hid.requestDevice({
-      filters: [{ usagePage: 0xFF31, usage: 0x0074 }]
+      filters: [{ usagePage: 0xFF60, usage: 0x61 }]
     });
     if (!devices.length) return;
 
-    device = devices[0];
-    await device.open();
+    hidDevice = devices[0];
+    await hidDevice.open();
 
     connected = true;
     lineBuf   = '';
     state     = newECState(0, 0);
 
-    device.addEventListener('inputreport', onReport);
-    device.addEventListener('disconnect', onDisconnect);
+    hidDevice.addEventListener('inputreport', onReport);
+    hidDevice.addEventListener('disconnect', onDisconnect);
 
-    document.getElementById('connect-btn').disabled    = true;
+    document.getElementById('connect-btn').disabled         = true;
     document.getElementById('disconnect-btn').style.display = 'inline-block';
+    document.getElementById('cal-btn').style.display        = 'inline-block';
 
+    await sendCmd(EC_HID_KEEPALIVE);
+    keepaliveTimer = setInterval(() => sendCmd(EC_HID_KEEPALIVE), 2000);
     render();
   } catch (e) {
     errEl.textContent = `Connection failed: ${e.message}`;
@@ -458,28 +481,34 @@ async function connect() {
 }
 
 async function disconnect() {
-  if (device) {
-    device.removeEventListener('inputreport', onReport);
-    try { await device.close(); } catch(_) {}
-    device = null;
+  clearInterval(keepaliveTimer);
+  keepaliveTimer = null;
+  if (hidDevice) {
+    hidDevice.removeEventListener('inputreport', onReport);
+    try { await hidDevice.close(); } catch(_) {}
+    hidDevice = null;
   }
   connected = false;
   state     = newECState(0, 0);
 
-  document.getElementById('connect-btn').disabled          = false;
-  document.getElementById('disconnect-btn').style.display  = 'none';
-  document.getElementById('status').className              = '';
-  document.getElementById('status').textContent            = '○  not connected';
-  document.getElementById('config-line').textContent       = '';
-  document.getElementById('tables').innerHTML              = '';
-  document.getElementById('error').textContent             = '';
+  document.getElementById('connect-btn').disabled         = false;
+  document.getElementById('disconnect-btn').style.display = 'none';
+  document.getElementById('cal-btn').style.display        = 'none';
+  document.getElementById('status').className             = '';
+  document.getElementById('status').textContent           = '○  not connected';
+  document.getElementById('config-line').textContent      = '';
+  document.getElementById('tables').innerHTML             = '';
+  document.getElementById('error').textContent            = '';
 }
 
 function onDisconnect() {
+  clearInterval(keepaliveTimer);
+  keepaliveTimer = null;
   document.getElementById('error').textContent = 'Keyboard disconnected.';
   connected = false;
-  document.getElementById('connect-btn').disabled          = false;
-  document.getElementById('disconnect-btn').style.display  = 'none';
+  document.getElementById('connect-btn').disabled         = false;
+  document.getElementById('disconnect-btn').style.display = 'none';
+  document.getElementById('cal-btn').style.display        = 'none';
 }
 
 function onReport(event) {
@@ -504,8 +533,24 @@ function onReport(event) {
   if (changed) render();
 }
 
-document.getElementById('connect-btn').addEventListener('click', connect);
-document.getElementById('disconnect-btn').addEventListener('click', disconnect);
+async function sendCmd(cmd) {
+  if (!hidDevice || !hidDevice.opened) return;
+  const buf = new Uint8Array(32);
+  buf[0] = 0xEC; // EC_HID_PREFIX — falls to default case in Vial's raw_hid_receive
+  buf[1] = cmd;
+  try {
+    await hidDevice.sendReport(0, buf);
+  } catch(e) {
+    document.getElementById('error').textContent = `Send failed: ${e.message}`;
+  }
+}
+
+function btnClick(id, fn) {
+  document.getElementById(id).addEventListener('click', e => { e.currentTarget.blur(); fn(); });
+}
+btnClick('connect-btn',    connect);
+btnClick('disconnect-btn', disconnect);
+btnClick('cal-btn',        () => sendCmd(EC_HID_CAL_TOGGLE));
 </script>
 </body>
 </html>

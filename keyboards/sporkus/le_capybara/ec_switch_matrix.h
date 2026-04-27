@@ -66,6 +66,9 @@ void ecsm_bottoming_cal_toggle(void);
 
 bool ecsm_matrix_scan(matrix_row_t current_matrix[]);
 
+// Called from raw_hid_receive_kb when a keepalive packet arrives (just stamps a timer)
+void ec_hid_keepalive(void);
+
 /// Read capacitive sensor raw ADC value
 uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col);
 

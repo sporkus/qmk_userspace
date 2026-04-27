@@ -20,6 +20,7 @@
 #include "analog.h"
 #include "atomic_util.h"
 #include "print.h"
+#include "raw_hid.h"
 
 /* Pin and port array */
 const uint32_t row_pins[]     = EC_MATRIX_ROW_PINS;
@@ -36,6 +37,26 @@ static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reac
 
 bool ecsm_bottoming_cal_active = false;
 bool ecsm_tui_active = false;
+
+static uint32_t ec_hid_last_keepalive = 0;
+static bool     ec_hid_was_connected  = false;
+#define EC_HID_TIMEOUT_MS 5000
+
+void ec_hid_keepalive(void) {
+    ec_hid_last_keepalive = timer_read32();
+}
+
+static void ec_hid_task(void) {
+    bool now_connected = ec_hid_last_keepalive != 0
+                         && timer_elapsed32(ec_hid_last_keepalive) < EC_HID_TIMEOUT_MS;
+    if (now_connected && !ec_hid_was_connected) {
+        ec_hid_was_connected = true;
+        if (!ecsm_tui_active) ecsm_tui_toggle();
+    } else if (!now_connected && ec_hid_was_connected) {
+        ec_hid_was_connected = false;
+        if (ecsm_tui_active) ecsm_tui_toggle();
+    }
+}
 static uint16_t ecsm_tui_scan_count = 0;
 static uint16_t ecsm_tui_cfg_count = 0;
 // Staggered config dump: -1 = idle/streaming, 0 = EC_CFG, 1..ROWS = EC_IDLE, ROWS+1..2*ROWS = EC_BOTTOM
@@ -54,11 +75,26 @@ const char* reset = "\x1b[0m";
 
 /* --- structured logging for ec_calibration TUI --- */
 
+// Send a string as 32-byte raw HID packets so the HTML tool can read via Raw HID.
+static void ec_hid_print(const char *str) {
+    uint8_t pkt[32];
+    uint16_t len = strlen(str);
+    uint16_t off = 0;
+    while (off < len) {
+        uint8_t chunk = (len - off) < 32 ? (len - off) : 32;
+        memset(pkt, 0, 32);
+        memcpy(pkt, str + off, chunk);
+        raw_hid_send(pkt, 32);
+        off += chunk;
+    }
+}
+
 // Emit one line of the config dump per call. line 0 = EC_CFG, 1..ROWS = EC_IDLE, ROWS+1..2*ROWS = EC_BOTTOM.
 // Returns true when the dump is complete.
 static bool ecsm_emit_dump_line(int8_t line) {
+    char buf[128];
     if (line == 0) {
-        uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d,gamma=%d\n",
+        snprintf(buf, sizeof(buf), "EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d,gamma=%d\n",
             EC_MATRIX_ROWS, EC_MATRIX_COLS,
             ecsm_config.actuation_offset, ecsm_config.release_offset,
             CALIBRATION_MIN_TRAVEL, DEFAULT_BOTTOM_ADC,
@@ -67,19 +103,21 @@ static bool ecsm_emit_dump_line(int8_t line) {
             (int)(TRAVEL_CURVE_GAMMA * 100));
     } else if (line <= EC_MATRIX_ROWS) {
         int r = line - 1;
-        uprintf("EC_IDLE:%d:", r);
+        int pos = snprintf(buf, sizeof(buf), "EC_IDLE:%d:", r);
         for (int j = 0; j < EC_MATRIX_COLS; j++)
-            uprintf(j ? ",%d" : "%d", ecsm_tuning_data[r][j]);
-        uprintln();
+            pos += snprintf(buf + pos, sizeof(buf) - pos, j ? ",%d" : "%d", ecsm_tuning_data[r][j]);
+        snprintf(buf + pos, sizeof(buf) - pos, "\n");
     } else if (line <= 2 * EC_MATRIX_ROWS) {
         int r = line - EC_MATRIX_ROWS - 1;
-        uprintf("EC_BOTTOM:%d:", r);
+        int pos = snprintf(buf, sizeof(buf), "EC_BOTTOM:%d:", r);
         for (int j = 0; j < EC_MATRIX_COLS; j++)
-            uprintf(j ? ",%d" : "%d", ecsm_config.bottoming[r][j]);
-        uprintln();
+            pos += snprintf(buf + pos, sizeof(buf) - pos, j ? ",%d" : "%d", ecsm_config.bottoming[r][j]);
+        snprintf(buf + pos, sizeof(buf) - pos, "\n");
     } else {
         return true; // done
     }
+    uprintf("%s", buf);
+    ec_hid_print(buf);
     return false;
 }
 
@@ -88,11 +126,13 @@ void ecsm_tui_toggle(void) {
     if (ecsm_tui_active) {
         uprintln("EC TUI mode started");
         uprintf("EC_EVENT:tuiStarted\n");
+        ec_hid_print("EC_EVENT:tuiStarted\n");
         ecsm_tui_dump_line = 0;  // queue config dump, emitted one line per scan cycle
         ecsm_tui_adc_row = 0;
     } else {
         ecsm_tui_dump_line = -1;
         uprintf("EC_EVENT:tuiStopped\n");
+        ec_hid_print("EC_EVENT:tuiStopped\n");
     }
 }
 
@@ -423,6 +463,7 @@ static void ecsm_cal_begin_bottoming_phase(void) {
     }
     memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
     uprintf("EC_EVENT:calTuningDone\n");
+    ec_hid_print("EC_EVENT:calTuningDone\n");
     ecsm_tui_dump_line = 0;
     uprintln("Baseline tuning done. Bottom all keys then press EC_CAL again.");
 }
@@ -443,6 +484,7 @@ static void ecsm_bottoming_cal_start(void) {
     ecsm_cal_tune_remaining = CAL_TUNE_CYCLES;
     uprintln("Calibration started: keep all fingers off keyboard for baseline tuning.");
     uprintf("EC_EVENT:calStarted\n");
+    ec_hid_print("EC_EVENT:calStarted\n");
     ecsm_tui_dump_line = 0;
 }
 
@@ -456,6 +498,7 @@ static void ecsm_bottoming_cal_save(void) {
     ecsm_config_update();
     uprintln("Bottoming calibration saved.");
     uprintf("EC_EVENT:calSaved\n");
+    ec_hid_print("EC_EVENT:calSaved\n");
 }
 
 void ecsm_bottoming_cal_toggle(void) {
@@ -510,6 +553,9 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                             ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
                             uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
                             uprintf("EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
+                            char kbuf[32];
+                            snprintf(kbuf, sizeof(kbuf), "EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
+                            ec_hid_print(kbuf);
                         }
                     }
                 }
@@ -539,10 +585,13 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
             }
         } else {
             // Normal streaming: one ADC row per tick, rotating through all rows
-            uprintf("EC_ADC:%d:", ecsm_tui_adc_row);
+            char abuf[128];
+            int apos = snprintf(abuf, sizeof(abuf), "EC_ADC:%d:", ecsm_tui_adc_row);
             for (int c = 0; c < EC_MATRIX_COLS; c++)
-                uprintf(c ? ",%d" : "%d", ecsm_sw_value[ecsm_tui_adc_row][c]);
-            uprintln();
+                apos += snprintf(abuf + apos, sizeof(abuf) - apos, c ? ",%d" : "%d", ecsm_sw_value[ecsm_tui_adc_row][c]);
+            snprintf(abuf + apos, sizeof(abuf) - apos, "\n");
+            uprintf("%s", abuf);
+            ec_hid_print(abuf);
             ecsm_tui_adc_row = (ecsm_tui_adc_row + 1) % EC_MATRIX_ROWS;
 
             if (++ecsm_tui_cfg_count >= 50) {
@@ -552,5 +601,6 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
         }
     }
 
+    ec_hid_task();
     return updated;
 }
