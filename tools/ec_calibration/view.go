@@ -142,6 +142,9 @@ func (m Model) View() string {
 	}, "\n")
 }
 
+// rowLabelWidth is the character width of the leading row-label cells.
+const rowLabelWidth = 6
+
 // colCellWidth defines the fixed width of a data cell in tables.
 const (
 	bottomingCellWidth = 6
@@ -158,9 +161,11 @@ func colHeaders(cols int, cellWidth int) string {
 }
 
 func renderBottomingTable(s *ECState, cols int) string {
-	line0 := tableHeaderStyle.Render("[Bottoming]") + colHeaders(cols, bottomingCellWidth)
-	lines := make([]string, 1, s.Config.Rows+1)
+	line0 := tableHeaderStyle.Render("[Bottoming]")
+	line1 := strings.Repeat(" ", rowLabelWidth) + colHeaders(cols, bottomingCellWidth)
+	lines := make([]string, 2, s.Config.Rows+2)
 	lines[0] = line0
+	lines[1] = line1
 
 	for r := 0; r < s.Config.Rows; r++ {
 		rowStr := fmt.Sprintf("  R%d  ", r)
@@ -180,9 +185,11 @@ func renderBottomingTable(s *ECState, cols int) string {
 }
 
 func renderADCTable(s *ECState, cols int) string {
-	line0 := tableHeaderStyle.Render("[ADC values]") + colHeaders(cols, adcCellWidth)
-	lines := make([]string, 1, s.Config.Rows+1)
+	line0 := tableHeaderStyle.Render("[ADC values]")
+	line1 := strings.Repeat(" ", rowLabelWidth) + colHeaders(cols, adcCellWidth)
+	lines := make([]string, 2, s.Config.Rows+2)
 	lines[0] = line0
+	lines[1] = line1
 
 	for r := 0; r < s.Config.Rows; r++ {
 		rowStr := fmt.Sprintf("  R%d  ", r)
@@ -200,9 +207,11 @@ func renderADCTable(s *ECState, cols int) string {
 }
 
 func renderTravelTable(s *ECState, cols int) string {
-	line0 := tableHeaderStyle.Render("[Travel %]") + colHeaders(cols, travelCellWidth)
-	lines := make([]string, 1, s.Config.Rows+1)
+	line0 := tableHeaderStyle.Render("[Travel %]")
+	line1 := strings.Repeat(" ", rowLabelWidth) + colHeaders(cols, travelCellWidth)
+	lines := make([]string, 2, s.Config.Rows+2)
 	lines[0] = line0
+	lines[1] = line1
 
 	for r := 0; r < s.Config.Rows; r++ {
 		rowStr := fmt.Sprintf("  R%d  ", r)

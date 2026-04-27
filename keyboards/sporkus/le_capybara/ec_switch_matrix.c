@@ -38,6 +38,9 @@ bool ecsm_bottoming_cal_active = false;
 bool ecsm_tui_active = false;
 static uint16_t ecsm_tui_scan_count = 0;
 static uint16_t ecsm_tui_cfg_count = 0;
+// Staggered config dump: -1 = idle/streaming, 0 = EC_CFG, 1..ROWS = EC_IDLE, ROWS+1..2*ROWS = EC_BOTTOM
+static int8_t  ecsm_tui_dump_line = -1;
+static uint8_t ecsm_tui_adc_row = 0;
 static uint32_t ecsm_cal_tune_remaining = 0;
 #define CAL_TUNE_CYCLES 3000  // baseline tuning duration at start of cal mode (~3s at 1kHz)
 static bool     ecsm_pressing[EC_MATRIX_ROWS][EC_MATRIX_COLS];     // key currently above cal threshold
@@ -50,28 +53,34 @@ const char* red = "\x1b[31m";
 const char* reset = "\x1b[0m";
 
 /* --- structured logging for ec_calibration TUI --- */
-static void ecsm_print_structured(void) {
-    uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d,gamma=%d\n",
-        EC_MATRIX_ROWS, EC_MATRIX_COLS,
-        ecsm_config.actuation_offset, ecsm_config.release_offset,
-        CALIBRATION_MIN_TRAVEL, DEFAULT_BOTTOM_ADC,
-        ecsm_config.configured ? 1 : 0,
-        ecsm_config.bottoming_configured ? 1 : 0,
-        (int)(TRAVEL_CURVE_GAMMA * 100));
 
-    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
-        uprintf("EC_IDLE:%d:", i);
+// Emit one line of the config dump per call. line 0 = EC_CFG, 1..ROWS = EC_IDLE, ROWS+1..2*ROWS = EC_BOTTOM.
+// Returns true when the dump is complete.
+static bool ecsm_emit_dump_line(int8_t line) {
+    if (line == 0) {
+        uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d,gamma=%d\n",
+            EC_MATRIX_ROWS, EC_MATRIX_COLS,
+            ecsm_config.actuation_offset, ecsm_config.release_offset,
+            CALIBRATION_MIN_TRAVEL, DEFAULT_BOTTOM_ADC,
+            ecsm_config.configured ? 1 : 0,
+            ecsm_config.bottoming_configured ? 1 : 0,
+            (int)(TRAVEL_CURVE_GAMMA * 100));
+    } else if (line <= EC_MATRIX_ROWS) {
+        int r = line - 1;
+        uprintf("EC_IDLE:%d:", r);
         for (int j = 0; j < EC_MATRIX_COLS; j++)
-            uprintf(j ? ",%d" : "%d", ecsm_tuning_data[i][j]);
+            uprintf(j ? ",%d" : "%d", ecsm_tuning_data[r][j]);
         uprintln();
-    }
-
-    for (int i = 0; i < EC_MATRIX_ROWS; i++) {
-        uprintf("EC_BOTTOM:%d:", i);
+    } else if (line <= 2 * EC_MATRIX_ROWS) {
+        int r = line - EC_MATRIX_ROWS - 1;
+        uprintf("EC_BOTTOM:%d:", r);
         for (int j = 0; j < EC_MATRIX_COLS; j++)
-            uprintf(j ? ",%d" : "%d", ecsm_config.bottoming[i][j]);
+            uprintf(j ? ",%d" : "%d", ecsm_config.bottoming[r][j]);
         uprintln();
+    } else {
+        return true; // done
     }
+    return false;
 }
 
 void ecsm_tui_toggle(void) {
@@ -79,9 +88,10 @@ void ecsm_tui_toggle(void) {
     if (ecsm_tui_active) {
         uprintln("EC TUI mode started");
         uprintf("EC_EVENT:tuiStarted\n");
-        ecsm_print_structured();
+        ecsm_tui_dump_line = 0;  // queue config dump, emitted one line per scan cycle
+        ecsm_tui_adc_row = 0;
     } else {
-        uprintln("EC TUI mode stopped");
+        ecsm_tui_dump_line = -1;
         uprintf("EC_EVENT:tuiStopped\n");
     }
 }
@@ -175,7 +185,7 @@ void ecsm_config_update(void) {
     uprintf("Writing current actuation points to presistent storage\n");
     eeconfig_update_kb_datablock(&ecsm_config);
     ecsm_print_debug();
-    ecsm_print_structured();
+    ecsm_tui_dump_line = 0;
 }
 
 void ecsm_eeprom_clear(void) {
@@ -413,11 +423,14 @@ static void ecsm_cal_begin_bottoming_phase(void) {
     }
     memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
     uprintf("EC_EVENT:calTuningDone\n");
-    ecsm_print_structured();
+    ecsm_tui_dump_line = 0;
     uprintln("Baseline tuning done. Bottom all keys then press EC_CAL again.");
 }
 
 static void ecsm_bottoming_cal_start(void) {
+    if (!ecsm_tui_active) {
+      ecsm_tui_toggle();
+    }
     if (!ecsm_config.configured) {
         uprintln("Bottoming calibration blocked: idle tuning not yet complete.");
         return;
@@ -430,7 +443,7 @@ static void ecsm_bottoming_cal_start(void) {
     ecsm_cal_tune_remaining = CAL_TUNE_CYCLES;
     uprintln("Calibration started: keep all fingers off keyboard for baseline tuning.");
     uprintf("EC_EVENT:calStarted\n");
-    ecsm_print_structured();
+    ecsm_tui_dump_line = 0;
 }
 
 static void ecsm_bottoming_cal_save(void) {
@@ -512,18 +525,30 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
         }
     }
 
-    /* --- structured ADC streaming for ec_calibration TUI --- */
+    /* --- structured ADC streaming for ec_calibration TUI ---
+     * One line emitted per 20-scan tick to avoid overflowing the HID console
+     * buffer, which is especially tight on Vial builds with multiple HID interfaces. */
     if (ecsm_tui_active && ++ecsm_tui_scan_count >= 20) {
         ecsm_tui_scan_count = 0;
-        for (int row = 0; row < EC_MATRIX_ROWS; row++) {
-            uprintf("EC_ADC:%d:", row);
+        if (ecsm_tui_dump_line >= 0) {
+            // Config dump in progress: emit one line then advance
+            if (ecsm_emit_dump_line(ecsm_tui_dump_line)) {
+                ecsm_tui_dump_line = -1; // dump complete, resume ADC streaming
+            } else {
+                ecsm_tui_dump_line++;
+            }
+        } else {
+            // Normal streaming: one ADC row per tick, rotating through all rows
+            uprintf("EC_ADC:%d:", ecsm_tui_adc_row);
             for (int c = 0; c < EC_MATRIX_COLS; c++)
-                uprintf(c ? ",%d" : "%d", ecsm_sw_value[row][c]);
+                uprintf(c ? ",%d" : "%d", ecsm_sw_value[ecsm_tui_adc_row][c]);
             uprintln();
-        }
-        if (++ecsm_tui_cfg_count >= 50) {
-            ecsm_tui_cfg_count = 0;
-            ecsm_print_structured();
+            ecsm_tui_adc_row = (ecsm_tui_adc_row + 1) % EC_MATRIX_ROWS;
+
+            if (++ecsm_tui_cfg_count >= 50) {
+                ecsm_tui_cfg_count = 0;
+                ecsm_tui_dump_line = 0; // queue periodic config refresh
+            }
         }
     }
 

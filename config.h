@@ -18,6 +18,7 @@
 
 #ifdef COMBO_ENABLE
 #	define EXTRA_SHORT_COMBOS
+#	define COMBO_TERM_PER_COMBO
 #	define COMBO_SHOULD_TRIGGER
 #	define COMBO_ONLY_FROM_LAYER 0
 #endif
