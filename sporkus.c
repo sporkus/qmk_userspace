@@ -62,8 +62,16 @@ uint32_t os_msg(uint32_t trigger_time, void *cb_arg) {
     return 0;
 }
 
+static uint32_t keep_awake_callback(uint32_t trigger_time, void *cb_arg) {
+    if (detected_host_os() == OS_WINDOWS) {
+        tap_code(KC_F24);
+    }
+    return 60000;
+}
+
 void keyboard_post_init_user(void) {
     defer_exec(1000, os_msg, NULL);
+    defer_exec(60000, keep_awake_callback, NULL);
 }
 
 // return false to interrupt normal processing
