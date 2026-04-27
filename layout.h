@@ -23,7 +23,7 @@ enum custom_keycodes {
 #define HM_J       RCTL_T(KC_J)
 #define HM_K       RGUI_T(KC_K)
 #define HM_L       RALT_T(KC_L)
-#define KC_QUOT    LSFT_T(KC_QUOT)
+#define KC_QUOT    RSFT_T(KC_QUOT)
 #define SFT_ENT    RSFT_T(KC_ENT)
 #define SFT_Z      LSFT_T(KC_Z)
 #define SFT_SLSH   RSFT_T(KC_SLSH)
@@ -31,7 +31,7 @@ enum custom_keycodes {
 #define HRML(halfrow) _HRML(halfrow)
 #define HRMR(halfrow) _HRMR(halfrow)
 #define _HRML(k1, k2, k3, k4, k5)     LSFT_T(k1), LALT_T(k2), LGUI_T(k3), LCTL_T(k4),         k5
-#define _HRMR(k1, k2, k3, k4, k5)             k1, LCTL_T(k2), LGUI_T(k3), LALT_T(k4), LSFT_T(k5)
+#define _HRMR(k1, k2, k3, k4, k5)             k1, RCTL_T(k2), RGUI_T(k3), RALT_T(k4), RSFT_T(k5)
 #define BRML(halfrow) _BRML(halfrow)
 #define BRMR(halfrow) _BRMR(halfrow)
 #define _BRML(k1, k2, k3, k4, k5)     LSFT_T(k1), k2, k3, k4, k5

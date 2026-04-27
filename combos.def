@@ -2,13 +2,13 @@
 
 //horizontal top
 CMB(TAB2,      KC_TAB,      25, KC_Q,    KC_W)
-CMB(BOOT,      QK_BOOT,     5,  KC_Q,    KC_W, KC_O, KC_P)
+CMB(BOOT,      QK_BOOT,     15,  KC_Q,    KC_W, KC_O, KC_P)
 
 //horizontal middle
-CMB(ENTER,     KC_ENTER,    25, HM_J,    HM_K)
-CMB(TAB,       KC_TAB,      25, HM_D,    HM_F)
-CMB(ESC,       KC_ESC,      25, HM_S,    HM_D)
-CMB(BSPC,      KC_BSPC,     25, HM_K,    HM_L)
+CMB(ENTER,     KC_ENTER,    50, HM_J,    HM_K)
+CMB(TAB,       KC_TAB,      50, HM_D,    HM_F)
+CMB(ESC,       KC_ESC,      50, HM_S,    HM_D)
+CMB(BSPC,      KC_BSPC,     50, HM_K,    HM_L)
 CMB(PRCR,      KC_PSCR,     20, HM_S,    HM_D, HM_F)
 
 //horizontal bottom

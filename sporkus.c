@@ -49,7 +49,6 @@ uint32_t os_msg(uint32_t trigger_time, void *cb_arg) {
     switch(detected_host_os()) {
         case OS_MACOS:
             uprintf("Mac\n");
-            keymap_config.swap_rctl_rgui = true;
             break;
         case OS_LINUX:
             uprintf("Linux\n");
