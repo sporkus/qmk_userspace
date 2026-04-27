@@ -38,7 +38,7 @@ body {
   font-weight: bold;
 }
 
-#connect-btn, #disconnect-btn, #stream-btn, #cal-btn {
+#connect-btn, #disconnect-btn, #cal-btn {
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
   padding: 4px 14px;
@@ -442,6 +442,7 @@ let hidDevice       = null;
 let connected       = false;
 let lineBuf         = '';
 let keepaliveTimer  = null;
+const decoder       = new TextDecoder('utf-8', {fatal: false});
 
 async function connect() {
   const errEl = document.getElementById('error');
@@ -457,6 +458,13 @@ async function connect() {
       filters: [{ usagePage: 0xFF60, usage: 0x61 }]
     });
     if (!devices.length) return;
+
+    if (hidDevice) {
+      hidDevice.removeEventListener('inputreport', onReport);
+      hidDevice.removeEventListener('disconnect', onDisconnect);
+      try { await hidDevice.close(); } catch(_) {}
+      hidDevice = null;
+    }
 
     hidDevice = devices[0];
     await hidDevice.open();
@@ -504,8 +512,14 @@ async function disconnect() {
 function onDisconnect() {
   clearInterval(keepaliveTimer);
   keepaliveTimer = null;
-  document.getElementById('error').textContent = 'Keyboard disconnected.';
+  if (hidDevice) {
+    hidDevice.removeEventListener('inputreport', onReport);
+    hidDevice.removeEventListener('disconnect', onDisconnect);
+    hidDevice = null;
+  }
   connected = false;
+  lineBuf   = '';
+  document.getElementById('error').textContent            = 'Keyboard disconnected.';
   document.getElementById('connect-btn').disabled         = false;
   document.getElementById('disconnect-btn').style.display = 'none';
   document.getElementById('cal-btn').style.display        = 'none';
@@ -517,7 +531,7 @@ function onReport(event) {
   while (end > 0 && bytes[end - 1] === 0) end--;
   if (end === 0) return;
 
-  lineBuf += new TextDecoder('utf-8', {fatal: false}).decode(bytes.subarray(0, end));
+  lineBuf += decoder.decode(bytes.subarray(0, end));
 
   const lines = lineBuf.split('\n');
   lineBuf = lines.pop();

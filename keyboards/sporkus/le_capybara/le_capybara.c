@@ -45,6 +45,9 @@ static void ec_hid_cmd(uint8_t *data, uint8_t length) {
         case EC_HID_AP_INC:     ecsm_ap_inc();                  break;
         case EC_HID_AP_DEC:     ecsm_ap_dec();                  break;
     }
+    // Zero prefix so via.c echoes all-zeros back; onReport skips zero-only packets.
+    data[0] = 0x00;
+    data[1] = 0x00;
 }
 
 #ifdef VIAL_ENABLE

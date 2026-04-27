@@ -1,4 +1,4 @@
-# Le Capybara
+# Le Capybara Firmware
 
 Electrocapacitive sensing (Topre/Niz) PCB in the Le Chiffre layout.
 
@@ -31,33 +31,41 @@ SRC += matrix.c analog.c ec_switch_matrix.c
 
 ## EC tuning
 
-Each key has a different capacitive baseline depending on assembly. On first flash, auto-tuning runs (~30 seconds) to measure idle values per key. Hold keys still during this.
+Each key has a different capacitive baseline depending on assembly. On first flash, auto-tuning runs a few seconds to measure idle values per key.
 
-After running bottoming calibration (`EC_CAL`), actuation depth is expressed as a percentage of per-key travel — e.g. 25% fires the key a quarter of the way down.
+These keycodes can be used in your qmk keymap or selected in vial > user keycodes.
 
 | Keycode                   | Action                                              |
 |---------------------------|-----------------------------------------------------|
-| `EC_DEEPER` / `EC_AP_I`   | Require deeper press to actuate (less sensitive)    |
-| `EC_SHALLOWER` / `EC_AP_D`| Require shallower press to actuate (more sensitive) |
+| `EC_AP_I`   | Require deeper press to actuate (less sensitive)    |
+| `EC_AP_D`| Require shallower press to actuate (more sensitive) |
+| `EC_TUI`                  | Toggle streaming data to calibration tool            |
 | `EC_CAL`                  | Toggle bottoming calibration (start / save)         |
 | `EC_CLR`                  | Reset stored EC config, re-tune on next boot        |
 | `EE_CLR`                  | Full EEPROM reset                                   |
 
-Configured in `config.h`:
 
+### Calibration Tool
+For more accurate calibration, use the calibration tool in `tools/ec_calibration`.
+- [ Web (download and run in chrome) ](tools/ec_calibration/ec_calibration.html)
+
+Usage is the same for both versions:
+- Start the tool
+- Start calibration mode using the calibration button
+  - Phase 1: Keep hands off keyboard for baseline calibration
+  - Phase 2: Tunes bottom out value by pressing each key
+- Saves calibration result
+
+![calibration_tool](./calibration_tool.png)
+
+## More configuration in `config.h`:
+The capacitance response isn't linear - a default gamma curve is applied to 
 ```c
-#define ACTUATION_DEPTH 50     // 50% of key travel (after bottoming cal), or raw ADC units before
-#define RELEASE_DEPTH   40     // 40% — shallower than actuation, must lift past here to de-actuate
-#define ECSM_TUNE_ON_BOOT      // re-tune every boot (more flash writes)
-#define ECSM_DEBUG             // print EC readings to console
-#define EC_MATRIX              // guard for #ifdef EC_MATRIX in shared code
+#define ACTUATION_DEPTH 60         // 60% of travel depth
+#define RELEASE_DEPTH 50           // 50% of travel depth 
+#define CALIBRATION_MIN_TRAVEL 10  // minimum travel as % of expected travel to count a key as bottomed
+#define DEFAULT_IDLE 300           // default idle ADC before tuning completes
+#define DEFAULT_BOTTOM_ADC 950     // assumed bottom ADC reading before bottoming calibration
+#define TRAVEL_CURVE_GAMMA 2.0f    // power curve for actuation: >1 linearises EC's nonlinear capacitance response; 1.0 = linear
 ```
-
-## RGB
-
-11 LEDs (9 underglow + 2 front indicators). If front LEDs are not installed and bypassed with the solder jumper, define `FRONT_LEDS_BYPASS` in `config.h` to reduce LED count to 9.
-
-Front LEDs serve as indicators when enabled:
-- `RGB_MODS_INDICATOR_ENABLE` — lights on mod keys while held
-- `RGB_LAYER_INDICATOR_ENABLE` — shows active layer
 

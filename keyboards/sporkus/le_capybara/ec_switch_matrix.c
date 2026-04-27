@@ -116,7 +116,6 @@ static bool ecsm_emit_dump_line(int8_t line) {
     } else {
         return true; // done
     }
-    uprintf("%s", buf);
     ec_hid_print(buf);
     return false;
 }
@@ -125,13 +124,12 @@ void ecsm_tui_toggle(void) {
     ecsm_tui_active = !ecsm_tui_active;
     if (ecsm_tui_active) {
         uprintln("EC TUI mode started");
-        uprintf("EC_EVENT:tuiStarted\n");
         ec_hid_print("EC_EVENT:tuiStarted\n");
         ecsm_tui_dump_line = 0;  // queue config dump, emitted one line per scan cycle
         ecsm_tui_adc_row = 0;
     } else {
         ecsm_tui_dump_line = -1;
-        uprintf("EC_EVENT:tuiStopped\n");
+        uprintln("EC TUI mode stopped");
         ec_hid_print("EC_EVENT:tuiStopped\n");
     }
 }
@@ -462,7 +460,6 @@ static void ecsm_cal_begin_bottoming_phase(void) {
         }
     }
     memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
-    uprintf("EC_EVENT:calTuningDone\n");
     ec_hid_print("EC_EVENT:calTuningDone\n");
     ecsm_tui_dump_line = 0;
     uprintln("Baseline tuning done. Bottom all keys then press EC_CAL again.");
@@ -483,7 +480,6 @@ static void ecsm_bottoming_cal_start(void) {
     ecsm_bottoming_cal_active = true;
     ecsm_cal_tune_remaining = CAL_TUNE_CYCLES;
     uprintln("Calibration started: keep all fingers off keyboard for baseline tuning.");
-    uprintf("EC_EVENT:calStarted\n");
     ec_hid_print("EC_EVENT:calStarted\n");
     ecsm_tui_dump_line = 0;
 }
@@ -497,7 +493,6 @@ static void ecsm_bottoming_cal_save(void) {
     ecsm_update_thresholds();
     ecsm_config_update();
     uprintln("Bottoming calibration saved.");
-    uprintf("EC_EVENT:calSaved\n");
     ec_hid_print("EC_EVENT:calSaved\n");
 }
 
@@ -552,7 +547,6 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                         if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
                             ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
                             uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
-                            uprintf("EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
                             char kbuf[32];
                             snprintf(kbuf, sizeof(kbuf), "EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
                             ec_hid_print(kbuf);
@@ -590,7 +584,6 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
             for (int c = 0; c < EC_MATRIX_COLS; c++)
                 apos += snprintf(abuf + apos, sizeof(abuf) - apos, c ? ",%d" : "%d", ecsm_sw_value[ecsm_tui_adc_row][c]);
             snprintf(abuf + apos, sizeof(abuf) - apos, "\n");
-            uprintf("%s", abuf);
             ec_hid_print(abuf);
             ecsm_tui_adc_row = (ecsm_tui_adc_row + 1) % EC_MATRIX_ROWS;
 
