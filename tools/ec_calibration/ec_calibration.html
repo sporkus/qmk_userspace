@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EC Calibration</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d0d0d;
+  color: #cccccc;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  padding: 24px;
+  min-height: 100vh;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+#title {
+  color: #FFA500;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#status {
+  color: #888888;
+}
+#status.active {
+  color: #33FF33;
+  font-weight: bold;
+}
+
+#connect-btn, #disconnect-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  padding: 4px 14px;
+  cursor: pointer;
+  border: 1px solid;
+  background: transparent;
+}
+#connect-btn {
+  color: #FFA500;
+  border-color: #FFA500;
+}
+#connect-btn:hover { background: #1a0f00; }
+#connect-btn:disabled { color: #555; border-color: #555; cursor: default; background: transparent; }
+
+#disconnect-btn {
+  color: #888;
+  border-color: #555;
+  display: none;
+}
+#disconnect-btn:hover { background: #1a1a1a; }
+
+#error {
+  color: #FF4444;
+  margin-bottom: 10px;
+  min-height: 1em;
+}
+
+#config-line {
+  color: #666666;
+  margin-bottom: 20px;
+  min-height: 1em;
+}
+
+#tables {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+th {
+  color: #AAAAAA;
+  font-weight: bold;
+  text-align: right;
+  padding: 1px 8px;
+  min-width: 52px;
+}
+th.row-label {
+  text-align: left;
+  min-width: 40px;
+  color: #AAAAAA;
+}
+th.section-header {
+  text-align: left;
+  padding-bottom: 4px;
+  min-width: 0;
+}
+
+td {
+  text-align: right;
+  padding: 1px 8px;
+  min-width: 52px;
+  color: #555555;
+}
+td.row-label { text-align: left; color: #888888; min-width: 40px; }
+td.missing   { color: #444444; }
+td.cal-ok    { color: #33FF33; }
+td.cal-no    { color: #555555; }
+td.actuated  { color: #FF2222; }
+td.at-rest   { color: #555555; }
+td.adc-val   { color: #aaaaaa; }
+
+#help {
+  color: #555555;
+  margin-top: 20px;
+}
+
+.unsupported {
+  color: #FF4444;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span id="title"> EC Calibration </span>
+  <span id="status">○  not connected</span>
+  <button id="connect-btn">Connect Keyboard</button>
+  <button id="disconnect-btn">Disconnect</button>
+</div>
+
+<div id="error"></div>
+<div id="config-line"></div>
+<div id="tables"></div>
+<div id="help">EC_TUI = toggle stream &nbsp;·&nbsp; EC_CAL = toggle calibration</div>
+
+<script>
+'use strict';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+function newKeyCal()  { return { idle: 0, bottom: 0 }; }
+function newKeyLive() { return { adc: 0, travel: 0, valid: false }; }
+
+function newECState(rows, cols) {
+  return {
+    config: {
+      rows, cols,
+      actuationOffset: 0,
+      releaseOffset:   0,
+      configured:      false,
+      bottomingCal:    false,
+      minTravel:       0,
+      defaultBottom:   0,
+      gamma:           1.0,
+    },
+    cal:      Array.from({length: rows}, () => Array.from({length: cols}, newKeyCal)),
+    live:     Array.from({length: rows}, () => Array.from({length: cols}, newKeyLive)),
+    tuiMode:  false,
+    calMode:  false,
+    calPhase: 0,
+    ready:    false,
+  };
+}
+
+function keyCalibrated(s, r, c) {
+  if (r < 0 || r >= s.config.rows || c < 0 || c >= s.config.cols) return false;
+  const k = s.cal[r][c];
+  if (k.bottom === 0 && k.idle === 0) return false;
+  const travel = k.bottom - k.idle;
+  const minT   = (s.config.defaultBottom - k.idle) * s.config.minTravel / 100;
+  return travel >= minT && travel > 0;
+}
+
+function travelPercent(cal, adc, gamma) {
+  const idle   = cal.idle;
+  const bottom = cal.bottom;
+  if (bottom <= idle) return 0;
+  let raw = (adc - idle) / (bottom - idle);
+  if (raw < 0) raw = 0;
+  if (raw > 1) raw = 1;
+  if (gamma <= 0) gamma = 1;
+  return Math.pow(raw, gamma) * 100;
+}
+
+// ─── Parser ───────────────────────────────────────────────────────────────────
+
+function parseLine(line, s) {
+  const idx = line.lastIndexOf(': ');
+  if (idx !== -1) line = line.substring(idx + 2);
+  if (!line.startsWith('EC_')) return;
+
+  const colon = line.indexOf(':');
+  if (colon === -1) return;
+  const tag  = line.substring(0, colon);
+  const body = line.substring(colon + 1);
+
+  switch (tag) {
+    case 'EC_CFG':        parseConfig(body, s);         break;
+    case 'EC_IDLE':       parseCalRow(body, s, 'idle');  break;
+    case 'EC_BOTTOM':     parseCalRow(body, s, 'bottom');break;
+    case 'EC_ADC':        parseADCRow(body, s);          break;
+    case 'EC_KEY_BOTTOM': parseKeyBottom(body, s);       break;
+    case 'EC_EVENT':      parseEvent(body, s);           break;
+  }
+}
+
+function parseConfig(body, s) {
+  const kv = {};
+  for (const part of body.split(',')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    kv[part.substring(0, eq).trim()] = part.substring(eq + 1).trim();
+  }
+
+  const rows = parseInt(kv.rows) || 0;
+  const cols = parseInt(kv.cols) || 0;
+  if (rows <= 0 || cols <= 0) return;
+
+  if (!s.ready || s.config.rows !== rows || s.config.cols !== cols) {
+    const ns = newECState(rows, cols);
+    ns.config   = s.config;
+    ns.tuiMode  = s.tuiMode;
+    ns.calMode  = s.calMode;
+    ns.calPhase = s.calPhase;
+    Object.assign(s, ns);
+    s.ready = true;
+  }
+
+  s.config.rows             = rows;
+  s.config.cols             = cols;
+  s.config.actuationOffset  = parseInt(kv.act)            || 0;
+  s.config.releaseOffset    = parseInt(kv.rel)            || 0;
+  s.config.minTravel        = parseInt(kv.min_travel)     || 0;
+  s.config.defaultBottom    = parseInt(kv.default_bottom) || 0;
+  s.config.configured       = kv.configured    === '1';
+  s.config.bottomingCal     = kv.bottoming_cal === '1';
+  const gammaScaled = parseInt(kv.gamma) || 0;
+  if (gammaScaled > 0) s.config.gamma = gammaScaled / 100.0;
+}
+
+function parseCalRow(body, s, kind) {
+  const colon = body.indexOf(':');
+  if (colon === -1) return;
+  const row = parseInt(body.substring(0, colon));
+  if (isNaN(row) || row < 0 || row >= s.config.rows) return;
+  parseCSV(body.substring(colon + 1)).forEach((v, c) => {
+    if (c >= s.config.cols) return;
+    s.cal[row][c][kind] = v;
+  });
+}
+
+function parseADCRow(body, s) {
+  if (!s.ready) return;
+  const colon = body.indexOf(':');
+  if (colon === -1) return;
+  const row = parseInt(body.substring(0, colon));
+  if (isNaN(row) || row < 0 || row >= s.config.rows) return;
+  const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
+  parseCSV(body.substring(colon + 1)).forEach((adc, c) => {
+    if (c >= s.config.cols) return;
+    s.live[row][c].adc    = adc;
+    s.live[row][c].travel = travelPercent(s.cal[row][c], adc, gamma);
+    s.live[row][c].valid  = true;
+  });
+}
+
+function parseKeyBottom(body, s) {
+  const colon = body.indexOf(':');
+  if (colon === -1) return;
+  const coords = body.substring(0, colon).split(',');
+  if (coords.length !== 2) return;
+  const row = parseInt(coords[0]);
+  const col = parseInt(coords[1]);
+  const val = parseInt(body.substring(colon + 1).trim());
+  if (isNaN(row) || isNaN(col) || isNaN(val)) return;
+  if (row < 0 || row >= s.config.rows || col < 0 || col >= s.config.cols) return;
+  s.cal[row][col].bottom = val;
+  const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
+  s.live[row][col].travel = travelPercent(s.cal[row][col], s.live[row][col].adc, gamma);
+}
+
+function parseEvent(body, s) {
+  switch (body.trim()) {
+    case 'tuiStarted':    s.tuiMode = true;                              break;
+    case 'tuiStopped':    s.tuiMode = false; s.calMode = false; s.calPhase = 0; break;
+    case 'calStarted':    s.calMode = true;  s.calPhase = 1;             break;
+    case 'calTuningDone': s.calPhase = 2;                                break;
+    case 'calSaved':      s.calMode = false; s.calPhase = 0;             break;
+  }
+}
+
+function parseCSV(str) {
+  return str.split(',').map(s => parseInt(s.trim())).filter(v => !isNaN(v));
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+
+let state = newECState(0, 0);
+
+function render() {
+  const s = state;
+  const statusEl = document.getElementById('status');
+  const configEl = document.getElementById('config-line');
+  const tablesEl = document.getElementById('tables');
+
+  if (!s.ready) {
+    statusEl.className   = '';
+    statusEl.textContent = connected
+      ? '○  press EC_TUI on keyboard to stream data'
+      : '○  not connected';
+    configEl.textContent = '';
+    tablesEl.innerHTML   = '';
+    return;
+  }
+
+  if (s.calPhase === 1) {
+    statusEl.className   = 'active';
+    statusEl.textContent = '● PHASE 1: lift all fingers — tuning baseline…';
+  } else if (s.calPhase === 2) {
+    statusEl.className   = 'active';
+    statusEl.textContent = '● PHASE 2: bottom every key, then press EC_CAL to save';
+  } else if (s.tuiMode) {
+    statusEl.className   = '';
+    statusEl.textContent = '○ TUI active — press EC_CAL to calibrate';
+  } else {
+    statusEl.className   = '';
+    statusEl.textContent = '○ press EC_TUI on keyboard to stream data';
+  }
+
+  const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
+  configEl.textContent =
+    `actuation: ${s.config.actuationOffset}%  ` +
+    `release: ${s.config.releaseOffset}%  ` +
+    `curve gamma: ${gamma.toFixed(2)}  ` +
+    `(1.0 = linear, higher = more physical travel per % actuation)`;
+
+  tablesEl.innerHTML =
+    wrapTable('[Bottoming]',  renderBottomingRows(s), s.config.cols) +
+    wrapTable('[ADC values]', renderADCRows(s),       s.config.cols) +
+    wrapTable('[Travel %]',   renderTravelRows(s),    s.config.cols);
+}
+
+function wrapTable(label, rowsHtml, cols) {
+  const headers = Array.from({length: cols}, (_, c) => `<th>C${c}</th>`).join('');
+  return `
+    <div class="tbl-wrap">
+      <table>
+        <tr><th class="section-header" colspan="${cols + 1}">${label}</th></tr>
+        <tr><th class="row-label"></th>${headers}</tr>
+        ${rowsHtml}
+      </table>
+    </div>`;
+}
+
+function renderBottomingRows(s) {
+  let html = '';
+  for (let r = 0; r < s.config.rows; r++) {
+    html += `<tr><td class="row-label">R${r}</td>`;
+    for (let c = 0; c < s.config.cols; c++) {
+      const cal = s.cal[r][c];
+      if (cal.idle === 0 && cal.bottom === 0) {
+        html += `<td class="missing">✗</td>`;
+      } else if (keyCalibrated(s, r, c)) {
+        html += `<td class="cal-ok">${cal.bottom}</td>`;
+      } else {
+        html += `<td class="cal-no">${cal.bottom}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  return html;
+}
+
+function renderADCRows(s) {
+  let html = '';
+  for (let r = 0; r < s.config.rows; r++) {
+    html += `<tr><td class="row-label">R${r}</td>`;
+    for (let c = 0; c < s.config.cols; c++) {
+      const live = s.live[r][c];
+      html += live.valid
+        ? `<td class="adc-val">${live.adc}</td>`
+        : `<td class="missing">✗</td>`;
+    }
+    html += '</tr>';
+  }
+  return html;
+}
+
+function renderTravelRows(s) {
+  let html = '';
+  for (let r = 0; r < s.config.rows; r++) {
+    html += `<tr><td class="row-label">R${r}</td>`;
+    for (let c = 0; c < s.config.cols; c++) {
+      const live = s.live[r][c];
+      const cal  = s.cal[r][c];
+      if (!live.valid || (!keyCalibrated(s, r, c) && cal.idle === 0)) {
+        html += `<td class="missing">✗</td>`;
+      } else {
+        const t   = live.travel;
+        const cls = t >= s.config.actuationOffset ? 'actuated' : 'at-rest';
+        html += `<td class="${cls}">${Math.round(t)}%</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  return html;
+}
+
+// ─── Web HID ──────────────────────────────────────────────────────────────────
+
+let device    = null;
+let connected = false;
+let lineBuf   = '';
+
+async function connect() {
+  const errEl = document.getElementById('error');
+  errEl.textContent = '';
+
+  if (!navigator.hid) {
+    errEl.textContent = 'Web HID not supported — use Chrome or Edge (version 89+)';
+    return;
+  }
+
+  try {
+    const devices = await navigator.hid.requestDevice({
+      filters: [{ usagePage: 0xFF31, usage: 0x0074 }]
+    });
+    if (!devices.length) return;
+
+    device = devices[0];
+    await device.open();
+
+    connected = true;
+    lineBuf   = '';
+    state     = newECState(0, 0);
+
+    device.addEventListener('inputreport', onReport);
+    device.addEventListener('disconnect', onDisconnect);
+
+    document.getElementById('connect-btn').disabled    = true;
+    document.getElementById('disconnect-btn').style.display = 'inline-block';
+
+    render();
+  } catch (e) {
+    errEl.textContent = `Connection failed: ${e.message}`;
+  }
+}
+
+async function disconnect() {
+  if (device) {
+    device.removeEventListener('inputreport', onReport);
+    try { await device.close(); } catch(_) {}
+    device = null;
+  }
+  connected = false;
+  state     = newECState(0, 0);
+
+  document.getElementById('connect-btn').disabled          = false;
+  document.getElementById('disconnect-btn').style.display  = 'none';
+  document.getElementById('status').className              = '';
+  document.getElementById('status').textContent            = '○  not connected';
+  document.getElementById('config-line').textContent       = '';
+  document.getElementById('tables').innerHTML              = '';
+  document.getElementById('error').textContent             = '';
+}
+
+function onDisconnect() {
+  document.getElementById('error').textContent = 'Keyboard disconnected.';
+  connected = false;
+  document.getElementById('connect-btn').disabled          = false;
+  document.getElementById('disconnect-btn').style.display  = 'none';
+}
+
+function onReport(event) {
+  const bytes = new Uint8Array(event.data.buffer);
+  let end = bytes.length;
+  while (end > 0 && bytes[end - 1] === 0) end--;
+  if (end === 0) return;
+
+  lineBuf += new TextDecoder('utf-8', {fatal: false}).decode(bytes.subarray(0, end));
+
+  const lines = lineBuf.split('\n');
+  lineBuf = lines.pop();
+
+  let changed = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed) {
+      parseLine(trimmed, state);
+      changed = true;
+    }
+  }
+  if (changed) render();
+}
+
+document.getElementById('connect-btn').addEventListener('click', connect);
+document.getElementById('disconnect-btn').addEventListener('click', disconnect);
+</script>
+</body>
+</html>
