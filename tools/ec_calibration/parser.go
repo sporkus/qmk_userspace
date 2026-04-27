@@ -40,7 +40,7 @@ func ParseLine(line string, s *ECState) {
 
 // parseConfig parses "rows=N,cols=N,act=N,rel=N,min_travel=N,default_bottom=N,configured=N,bottoming_cal=N"
 func parseConfig(body string, s *ECState) {
-	var rows, cols, act, rel, minTravel, defaultBottom, configured, bCal int
+	var rows, cols, act, rel, minTravel, defaultBottom, configured, bCal, gammaScaled int
 	for _, kv := range strings.Split(body, ",") {
 		parts := strings.SplitN(kv, "=", 2)
 		if len(parts) != 2 {
@@ -65,6 +65,8 @@ func parseConfig(body string, s *ECState) {
 			configured = v
 		case "bottoming_cal":
 			bCal = v
+		case "gamma":
+			gammaScaled = v
 		}
 	}
 
@@ -90,6 +92,9 @@ func parseConfig(body string, s *ECState) {
 	s.Config.DefaultBottom = defaultBottom
 	s.Config.Configured = configured != 0
 	s.Config.BottomingCal = bCal != 0
+	if gammaScaled > 0 {
+		s.Config.Gamma = float64(gammaScaled) / 100.0
+	}
 }
 
 // parseCalRow parses "row:val,val,val,..." and fills idle or bottom values.
@@ -144,7 +149,7 @@ func parseKeyBottom(body string, s *ECState) {
 		return
 	}
 	s.Cal[row][col].Bottom = uint16(val)
-	s.Live[row][col].Travel = travelPercent(s.Cal[row][col], s.Live[row][col].ADC)
+	s.Live[row][col].Travel = travelPercent(s.Cal[row][col], s.Live[row][col].ADC, s.Config.Gamma)
 }
 
 // parseEvent handles EC_EVENT payloads.
@@ -155,10 +160,15 @@ func parseEvent(body string, s *ECState) {
 	case "tuiStopped":
 		s.TuiMode = false
 		s.CalMode = false
+		s.CalPhase = 0
 	case "calStarted":
 		s.CalMode = true
+		s.CalPhase = 1
+	case "calTuningDone":
+		s.CalPhase = 2
 	case "calSaved":
 		s.CalMode = false
+		s.CalPhase = 0
 	}
 }
 

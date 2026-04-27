@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // Config holds the parsed EC_CFG key=value line.
 type Config struct {
@@ -12,6 +15,7 @@ type Config struct {
 	BottomingCal    bool
 	MinTravel       int
 	DefaultBottom   int
+	Gamma           float64 // TRAVEL_CURVE_GAMMA from firmware; 1.0 = linear
 }
 
 // KeyCal holds per-key calibration data (idle + bottom ADC).
@@ -32,9 +36,10 @@ type ECState struct {
 	Config  Config
 	Cal     [][]KeyCal
 	Live    [][]KeyLive
-	TuiMode bool // true when EC_TUI keycode has been pressed on the keyboard
-	CalMode bool // true when bottoming calibration is active
-	Ready   bool // true after EC_CFG received
+	TuiMode  bool // true when EC_TUI keycode has been pressed on the keyboard
+	CalMode  bool // true when bottoming calibration is active
+	CalPhase int  // 1 = baseline tuning (hands off), 2 = bottoming phase (press all keys)
+	Ready    bool // true after EC_CFG received
 }
 
 // NewECState initialises the calibration grids.
@@ -88,33 +93,40 @@ func (s *ECState) SetLive(row int, values []uint16) {
 	if row < 0 || row >= s.Config.Rows {
 		return
 	}
+	gamma := s.Config.Gamma
+	if gamma <= 0 {
+		gamma = 1
+	}
 	for c, adc := range values {
 		if c >= s.Config.Cols {
 			break
 		}
 		s.Live[row][c].ADC = adc
-		s.Live[row][c].Travel = travelPercent(s.Cal[row][c], adc)
+		s.Live[row][c].Travel = travelPercent(s.Cal[row][c], adc, gamma)
 		s.Live[row][c].valid = true
 	}
 }
 
-// travelPercent computes (adc - idle) / (bottom - idle) * 100.
-// Returns 0 if there's no valid calibration range.
-func travelPercent(cal KeyCal, adc uint16) float32 {
-	idle := int(cal.Idle)
-	bottom := int(cal.Bottom)
-	a := int(adc)
-	if bottom == idle || bottom <= idle {
+// travelPercent computes the gamma-corrected travel percentage.
+// raw = (adc - idle) / (bottom - idle); display = raw^gamma * 100
+// With gamma > 1 this linearises EC's nonlinear capacitance response.
+func travelPercent(cal KeyCal, adc uint16, gamma float64) float32 {
+	idle := float64(cal.Idle)
+	bottom := float64(cal.Bottom)
+	if bottom <= idle {
 		return 0
 	}
-	p := float32(a-idle) / float32(bottom-idle) * 100.0
-	if p < 0 {
-		return 0
+	raw := (float64(adc) - idle) / (bottom - idle)
+	if raw < 0 {
+		raw = 0
 	}
-	if p > 100 {
-		return 100
+	if raw > 1 {
+		raw = 1
 	}
-	return p
+	if gamma <= 0 {
+		gamma = 1
+	}
+	return float32(math.Pow(raw, gamma) * 100.0)
 }
 
 func (s ECState) String() string {

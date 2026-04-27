@@ -96,14 +96,26 @@ func (m Model) View() string {
 	// --- Header ---
 	var status string
 	switch {
-	case s.CalMode:
-		status = statusActive.Render("● CAL MODE ACTIVE  — press EC_CAL again to save")
+	case s.CalPhase == 1:
+		status = statusActive.Render("● PHASE 1: lift all fingers — tuning baseline…")
+	case s.CalPhase == 2:
+		status = statusActive.Render("● PHASE 2: bottom every key, then press EC_CAL to save")
 	case s.TuiMode:
 		status = statusInactive.Render("○ TUI active  — press EC_CAL to calibrate")
 	default:
 		status = statusInactive.Render("○ press EC_TUI on keyboard to stream data")
 	}
 	bar := lipgloss.JoinHorizontal(lipgloss.Center, title, "  ", status)
+
+	// --- Config line ---
+	gamma := s.Config.Gamma
+	if gamma <= 0 {
+		gamma = 1
+	}
+	configLine := helpStyle.Render(fmt.Sprintf(
+		"actuation: %d%%  release: %d%%  curve gamma: %.2g  (1.0 = linear, higher = more physical travel per %% actuation)",
+		s.Config.ActuationOffset, s.Config.ReleaseOffset, gamma,
+	))
 
 	// --- Bottoming table ---
 	bottoming := renderBottomingTable(s, cols)
@@ -118,6 +130,8 @@ func (m Model) View() string {
 
 	return strings.Join([]string{
 		bar,
+		configLine,
+		"",
 		bottoming,
 		"",
 		adcTable,
@@ -200,8 +214,12 @@ func renderTravelTable(s *ECState, cols int) string {
 				rowStr += fmt.Sprintf("%*s", travelCellWidth, "✗")
 			} else {
 				t := live.Travel
-				rowStr += lipgloss.NewStyle().Foreground(colorForTravel(t)).
-					Render(fmt.Sprintf("%*d%%", travelCellWidth-1, int(t+0.5)))
+				cell := fmt.Sprintf("%*d%%", travelCellWidth-1, int(t+0.5))
+				if t >= float32(s.Config.ActuationOffset) {
+					rowStr += lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2222")).Render(cell)
+				} else {
+					rowStr += faintStyle.Render(cell)
+				}
 			}
 		}
 		lines = append(lines, rowStr)
@@ -209,22 +227,6 @@ func renderTravelTable(s *ECState, cols int) string {
 	return strings.Join(lines, "\n")
 }
 
-func colorForTravel(t float32) lipgloss.Color {
-	switch {
-	case t > 80:
-		return lipgloss.Color("#FF2222") // deep red
-	case t > 60:
-		return lipgloss.Color("#FF6633") // orange-red
-	case t > 40:
-		return lipgloss.Color("#FFAA33") // orange
-	case t > 20:
-		return lipgloss.Color("#FFFF33") // yellow
-	case t > 5:
-		return lipgloss.Color("#CCCCCC") // light gray
-	default:
-		return lipgloss.Color("#666666") // dark gray
-	}
-}
 
 func waitForLine(ch chan string) tea.Cmd {
 	return func() tea.Msg {

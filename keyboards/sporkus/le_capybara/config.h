@@ -21,11 +21,12 @@
 //   e.g. ACTUATION_DEPTH 25 = key fires at 25% of full travel depth
 // Before calibration: raw ADC units above idle (fallback)
 // Adjustable at runtime with EC_DEEPER / EC_SHALLOWER (or EC_AP_I / EC_AP_D)
-#define ACTUATION_DEPTH 80         // 25% of travel
-#define RELEASE_DEPTH 65           // 28% of travel (3% hysteresis to avoid chatter)
+#define ACTUATION_DEPTH 60         // 25% of travel
+#define RELEASE_DEPTH 50           // 28% of travel (3% hysteresis to avoid chatter)
 #define DEFAULT_IDLE 500           // default idle ADC before tuning completes
 #define CALIBRATION_MIN_TRAVEL 10  // minimum travel as % of expected travel to count a key as bottomed
 #define DEFAULT_BOTTOM_ADC 950     // assumed bottom ADC reading before bottoming calibration
+#define TRAVEL_CURVE_GAMMA 2.0f    // power curve for actuation: >1 linearises EC's nonlinear capacitance response; 1.0 = linear
 #define ECSM_DEBUG            // enables printing ec config and ADC readings */
 #define EC_MATRIX            // allows ec code to be enabled with ifdef
 

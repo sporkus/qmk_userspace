@@ -38,6 +38,8 @@ bool ecsm_bottoming_cal_active = false;
 bool ecsm_tui_active = false;
 static uint16_t ecsm_tui_scan_count = 0;
 static uint16_t ecsm_tui_cfg_count = 0;
+static uint32_t ecsm_cal_tune_remaining = 0;
+#define CAL_TUNE_CYCLES 3000  // baseline tuning duration at start of cal mode (~3s at 1kHz)
 static bool     ecsm_pressing[EC_MATRIX_ROWS][EC_MATRIX_COLS];     // key currently above cal threshold
 static uint16_t ecsm_reported_max[EC_MATRIX_ROWS][EC_MATRIX_COLS]; // last printed max per key
 static bool ecsm_cal_saved_debug;
@@ -49,12 +51,13 @@ const char* reset = "\x1b[0m";
 
 /* --- structured logging for ec_calibration TUI --- */
 static void ecsm_print_structured(void) {
-    uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d\n",
+    uprintf("EC_CFG:rows=%d,cols=%d,act=%d,rel=%d,min_travel=%d,default_bottom=%d,configured=%d,bottoming_cal=%d,gamma=%d\n",
         EC_MATRIX_ROWS, EC_MATRIX_COLS,
         ecsm_config.actuation_offset, ecsm_config.release_offset,
         CALIBRATION_MIN_TRAVEL, DEFAULT_BOTTOM_ADC,
         ecsm_config.configured ? 1 : 0,
-        ecsm_config.bottoming_configured ? 1 : 0);
+        ecsm_config.bottoming_configured ? 1 : 0,
+        (int)(TRAVEL_CURVE_GAMMA * 100));
 
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         uprintf("EC_IDLE:%d:", i);
@@ -80,8 +83,6 @@ void ecsm_tui_toggle(void) {
     } else {
         uprintln("EC TUI mode stopped");
         uprintf("EC_EVENT:tuiStopped\n");
-        ecsm_update_thresholds();
-        ecsm_config_update();
     }
 }
 
@@ -142,8 +143,8 @@ void ecsm_config_init(void) {
     eeconfig_read_kb_datablock(&ecsm_config);
 
     // Clamp stored offsets — catches corrupted values from pre-percentage firmware
-    if (ecsm_config.actuation_offset > 95 || ecsm_config.release_offset > 95
-            || ecsm_config.actuation_offset < 0 || ecsm_config.release_offset < 0) {
+    if (ecsm_config.actuation_offset > 85 || ecsm_config.release_offset > 85
+            || ecsm_config.actuation_offset < 15 || ecsm_config.release_offset < 15) {
         uprintf("EC offsets out of range (%d, %d), resetting to defaults\n",
                 ecsm_config.actuation_offset, ecsm_config.release_offset);
         ecsm_config.actuation_offset = ACTUATION_DEPTH;
@@ -194,7 +195,7 @@ void ecsm_eeprom_clear(void) {
 }
 
 void ecsm_ap_inc(void) {
-    int16_t max_offset = 95;
+    int16_t max_offset = 85;
     int16_t step = 5;
     uprintf("\nIncreasing actuation depth (less sensitive)\n");
     int16_t offset_diff = ecsm_config.actuation_offset - ecsm_config.release_offset;
@@ -218,7 +219,7 @@ void ecsm_ap_inc(void) {
 }
 
 void ecsm_ap_dec(void) {
-    int16_t min_offset = 5;
+    int16_t min_offset = 15;
     int16_t step = 5;
     uprintf("\nDecreasing actuation depth (more sensitive)\n");
     int16_t offset_diff = ecsm_config.actuation_offset - ecsm_config.release_offset;
@@ -278,9 +279,10 @@ void ecsm_update_thresholds(void) {
                 travel = default_travel;
             }
 
-            // Offsets are always percentages (0-100) of travel
-            ecsm_thresholds[i][j].actuation = idle + (int32_t)ecsm_config.actuation_offset * travel / 100;
-            ecsm_thresholds[i][j].release   = idle + (int32_t)ecsm_config.release_offset   * travel / 100;
+            // Offsets are percentages (0-100) of travel, corrected for the ADC curve
+            float gamma_inv = 1.0f / TRAVEL_CURVE_GAMMA;
+            ecsm_thresholds[i][j].actuation = idle + (int16_t)(powf(ecsm_config.actuation_offset / 100.0f, gamma_inv) * travel);
+            ecsm_thresholds[i][j].release   = idle + (int16_t)(powf(ecsm_config.release_offset   / 100.0f, gamma_inv) * travel);
         }
     }
 }
@@ -402,24 +404,31 @@ void ecsm_print_debug(void) {
     uprintln();
 }
 
-static void ecsm_bottoming_cal_start(void) {
-    if (!ecsm_config.configured) {
-        uprintln("Bottoming calibration blocked: idle tuning not yet complete.");
-        return;
-    }
-    memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
+static void ecsm_cal_begin_bottoming_phase(void) {
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
             ecsm_config.bottoming[i][j] = ecsm_tuning_data[i][j];
             ecsm_reported_max[i][j]     = ecsm_tuning_data[i][j];
         }
     }
+    memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
+    uprintf("EC_EVENT:calTuningDone\n");
+    ecsm_print_structured();
+    uprintln("Baseline tuning done. Bottom all keys then press EC_CAL again.");
+}
+
+static void ecsm_bottoming_cal_start(void) {
+    if (!ecsm_config.configured) {
+        uprintln("Bottoming calibration blocked: idle tuning not yet complete.");
+        return;
+    }
     ecsm_cal_saved_debug    = debug_config.enable;
     ecsm_cal_saved_debug_kb = debug_config.keyboard;
     debug_config.enable   = false;
     debug_config.keyboard = false;
     ecsm_bottoming_cal_active = true;
-    uprintln("Bottoming calibration started. Bottom all keys then press EC_CAL again.");
+    ecsm_cal_tune_remaining = CAL_TUNE_CYCLES;
+    uprintln("Calibration started: keep all fingers off keyboard for baseline tuning.");
     uprintf("EC_EVENT:calStarted\n");
     ecsm_print_structured();
 }
@@ -466,34 +475,40 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                     ecsm_config.configured = true;
                     ecsm_config_update();
                 }
-            } else if (ecsm_tui_active) {
-                int16_t idle = ecsm_tuning_data[row][col];
-                int16_t rest_limit = idle + (DEFAULT_BOTTOM_ADC - idle) * 3 / 100;
-                if (adc < (uint16_t)rest_limit) {
-                    float adjusted = idle + ((float)adc - idle) * 0.02f;
-                    ecsm_tuning_data[row][col] = (int16_t)roundf(adjusted);
-                }
             }
 
             if (ecsm_bottoming_cal_active) {
-                int16_t idle = ecsm_tuning_data[row][col];
-                bool above = adc > (uint16_t)(idle + (DEFAULT_BOTTOM_ADC - idle) * CALIBRATION_MIN_TRAVEL / 100);
+                if (ecsm_cal_tune_remaining > 0) {
+                    // Phase 1: retune baseline with hands off
+                    ecsm_update_tuning_data(adc, row, col);
+                } else {
+                    // Phase 2: record per-key bottoming max
+                    int16_t idle = ecsm_tuning_data[row][col];
+                    bool above = adc > (uint16_t)(idle + (DEFAULT_BOTTOM_ADC - idle) * CALIBRATION_MIN_TRAVEL / 100);
 
-                if (adc > ecsm_config.bottoming[row][col])
-                    ecsm_config.bottoming[row][col] = adc;
+                    if (adc > ecsm_config.bottoming[row][col])
+                        ecsm_config.bottoming[row][col] = adc;
 
-                if (above && !ecsm_pressing[row][col]) {
-                    ecsm_pressing[row][col] = true;
-                } else if (!above && ecsm_pressing[row][col]) {
-                    // key released — report if max improved since last print
-                    ecsm_pressing[row][col] = false;
-                    if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
-                        ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
-                        uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
-                        uprintf("EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
+                    if (above && !ecsm_pressing[row][col]) {
+                        ecsm_pressing[row][col] = true;
+                    } else if (!above && ecsm_pressing[row][col]) {
+                        ecsm_pressing[row][col] = false;
+                        if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
+                            ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
+                            uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
+                            uprintf("EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
+                        }
                     }
                 }
             }
+        }
+    }
+
+    // Advance phase 1 → phase 2 once tuning countdown completes
+    if (ecsm_bottoming_cal_active && ecsm_cal_tune_remaining > 0) {
+        if (--ecsm_cal_tune_remaining == 0) {
+            ecsm_update_thresholds();
+            ecsm_cal_begin_bottoming_phase();
         }
     }
 
@@ -508,7 +523,6 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
         }
         if (++ecsm_tui_cfg_count >= 50) {
             ecsm_tui_cfg_count = 0;
-            ecsm_update_thresholds();
             ecsm_print_structured();
         }
     }
