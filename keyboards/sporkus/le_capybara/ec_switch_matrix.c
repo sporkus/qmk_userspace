@@ -545,6 +545,14 @@ void ecsm_set_bottom(uint8_t row, uint8_t col, uint16_t value) {
     ecsm_config_update();
 }
 
+void ecsm_set_idle(uint8_t row, uint8_t col, uint16_t value) {
+    if (row >= EC_MATRIX_ROWS || col >= EC_MATRIX_COLS) return;
+    ecsm_config.idle[row][col]   = (int16_t)value;
+    ecsm_tuning_data[row][col]   = (int16_t)value;
+    ecsm_update_thresholds();
+    ecsm_config_update();
+}
+
 void ecsm_bottoming_cal_toggle(void) {
     if (ecsm_bottoming_cal_active) {
         ecsm_bottoming_cal_save();

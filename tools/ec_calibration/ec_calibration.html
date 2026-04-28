@@ -137,14 +137,22 @@ body {
   color: #666;
   flex-wrap: wrap;
 }
-#gamma-slider {
-  accent-color: #FF8800;
-  width: 180px;
+#gamma-slider  { accent-color: #FF8800; width: 160px; cursor: pointer; }
+#gamma-val     { color: #FF8800; min-width: 28px; }
+#bottom-slider { accent-color: #33AAFF; width: 160px; cursor: pointer; }
+#bottom-val    { color: #33AAFF; min-width: 32px; }
+#idle-slider   { accent-color: #888;   width: 160px; cursor: pointer; }
+#idle-val      { color: #aaa;   min-width: 32px; }
+.bump-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  padding: 1px 8px;
   cursor: pointer;
+  border: 1px solid #333;
+  background: transparent;
+  color: #666;
 }
-#gamma-val   { color: #FF8800; min-width: 28px; }
-#bottom-val  { color: #33AAFF; min-width: 28px; }
-#bottom-slider { accent-color: #33AAFF; width: 140px; cursor: pointer; }
+.bump-btn:hover { background: #1a1a1a; color: #aaa; }
 #jab-chips {
   display: flex;
   gap: 8px;
@@ -174,11 +182,36 @@ body {
   min-height: 1em;
 }
 
-#config-line {
-  color: #666666;
+#panels {
+  display: none;
+  flex-direction: row;
+  gap: 16px;
   margin-bottom: 20px;
-  min-height: 1em;
+  flex-wrap: wrap;
 }
+.panel {
+  border: 1px solid #222;
+  padding: 10px 16px 12px;
+  min-width: 240px;
+}
+.panel-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #444;
+  margin-bottom: 8px;
+}
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.panel-row:last-child { margin-bottom: 0; }
+.p-lbl  { color: #555; min-width: 64px; }
+.p-val  { color: #aaa; min-width: 32px; }
+.p-hint { color: #2e2e2e; font-size: 11px; }
 
 #tables { overflow-x: auto; }
 
@@ -246,7 +279,39 @@ td.key-cell.missing  .key-travel { color: #333; }
   <div class="cal-phase"></div>
   <div class="cal-msg"></div>
 </div>
-<div id="config-line"></div>
+<div id="panels">
+  <div class="panel">
+    <div class="panel-title">GLOBAL</div>
+    <div class="panel-row">
+      <span class="p-lbl">gamma</span>
+      <input type="range" id="gamma-slider" min="0.5" max="6" step="0.1" value="3.0">
+      <span id="gamma-val">3.0</span>
+      <span class="p-hint">adjust until transformed trace is linear</span>
+    </div>
+    <div class="panel-row">
+      <span class="p-lbl">actuation</span>
+      <button class="bump-btn" id="act-down-btn" tabindex="-1">−</button>
+      <span id="actuation-val" class="p-val">—</span>
+      <button class="bump-btn" id="act-up-btn" tabindex="-1">+</button>
+      <span class="p-lbl" style="margin-left:10px">release</span>
+      <span id="release-val" class="p-val">—</span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="key-panel-title">SELECTED KEY</div>
+    <div class="panel-row">
+      <span class="p-lbl">bottom</span>
+      <input type="range" id="bottom-slider" min="300" max="1023" step="1" value="800">
+      <span id="bottom-val">—</span>
+      <span class="p-hint">drag to fine-tune per key</span>
+    </div>
+    <div class="panel-row">
+      <span class="p-lbl">idle</span>
+      <input type="range" id="idle-slider" min="0" max="800" step="1" value="300">
+      <span id="idle-val">—</span>
+    </div>
+  </div>
+</div>
 <div id="jab-section">
   <div id="jab-canvases">
     <div class="jab-panel">
@@ -262,15 +327,6 @@ td.key-cell.missing  .key-travel { color: #333; }
   <div id="jab-controls">
     <button id="jab-btn" tabindex="-1">Start Graph</button>
     <button id="clear-btn" tabindex="-1">Clear</button>
-    <span style="color:#333; margin-left:4px">|</span>
-    <span>gamma</span>
-    <input type="range" id="gamma-slider" min="0.5" max="6" step="0.1" value="3.0">
-    <span id="gamma-val">3.0</span>
-    <span style="color:#444; margin-left:4px">— adjust until transformed trace looks linear</span>
-    <span style="color:#333; margin-left:8px">|</span>
-    <span>bottom</span>
-    <input type="range" id="bottom-slider" min="300" max="1023" step="1" value="800">
-    <span id="bottom-val">—</span>
   </div>
   <div id="jab-analysis"></div>
 </div>
@@ -513,13 +569,11 @@ function updateKeyCells(s) {
 function render() {
   const s = state;
   const statusEl = document.getElementById('status');
-  const configEl = document.getElementById('config-line');
   const tablesEl = document.getElementById('tables');
 
   if (!s.ready) {
     statusEl.className   = '';
     statusEl.textContent = '○  not connected';
-    configEl.textContent = '';
     tablesEl.innerHTML   = '';
     tableRows = -1; tableCols = -1; cellMap = [];
     return;
@@ -548,12 +602,8 @@ function render() {
   calBtn.className   = s.calMode ? 'active' : '';
   calBtn.textContent = s.calMode ? 'Save Cal' : 'Calibrate';
 
-  const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
-  configEl.textContent =
-    `actuation: ${s.config.actuationOffset}%  ` +
-    `release: ${s.config.releaseOffset}%  ` +
-    `curve gamma: ${gamma.toFixed(2)}  ` +
-    `(1.0 = linear, higher = more physical travel per % actuation)`;
+  document.getElementById('actuation-val').textContent = s.config.actuationOffset + '%';
+  document.getElementById('release-val').textContent   = s.config.releaseOffset   + '%';
 
   if (s.config.rows !== tableRows || s.config.cols !== tableCols) {
     buildTable(s);
@@ -783,26 +833,39 @@ document.getElementById('gamma-slider').addEventListener('input', e => {
 
 function updateRawLabel() {
   document.getElementById('jab-cv-raw').closest('.jab-panel').querySelector('.jab-panel-label').textContent = `Raw ADC — R${selRow} C${selCol}`;
+  document.getElementById('key-panel-title').textContent = `SELECTED KEY  R${selRow} C${selCol}`;
 }
 
-function syncBottomSlider() {
+function syncKeyPanel() {
   const cal = state.cal[selRow] && state.cal[selRow][selCol];
-  const val = (cal && cal.bottom > 0) ? cal.bottom : null;
-  const slider  = document.getElementById('bottom-slider');
-  const display = document.getElementById('bottom-val');
-  if (val !== null) {
-    slider.value      = val;
-    display.textContent = val;
-  } else {
-    display.textContent = '—';
-  }
+
+  const btm = (cal && cal.bottom > 0) ? cal.bottom : null;
+  const btmSlider = document.getElementById('bottom-slider');
+  const btmVal    = document.getElementById('bottom-val');
+  if (btm !== null) { btmSlider.value = btm; btmVal.textContent = btm; }
+  else { btmVal.textContent = '—'; }
+
+  const idl = (cal && cal.idle > 0) ? cal.idle : null;
+  const idlSlider = document.getElementById('idle-slider');
+  const idlVal    = document.getElementById('idle-val');
+  if (idl !== null) { idlSlider.value = idl; idlVal.textContent = idl; }
+  else { idlVal.textContent = '—'; }
 }
+function syncBottomSlider() { syncKeyPanel(); }
 
 document.getElementById('bottom-slider').addEventListener('input', e => {
   const val = parseInt(e.target.value);
   document.getElementById('bottom-val').textContent = val;
   if (state.cal[selRow] && state.cal[selRow][selCol]) state.cal[selRow][selCol].bottom = val;
   sendCmd(EC_HID_SET_BOTTOM, selRow, selCol, (val >> 8) & 0xFF, val & 0xFF);
+  redrawJab();
+});
+
+document.getElementById('idle-slider').addEventListener('input', e => {
+  const val = parseInt(e.target.value);
+  document.getElementById('idle-val').textContent = val;
+  if (state.cal[selRow] && state.cal[selRow][selCol]) state.cal[selRow][selCol].idle = val;
+  sendCmd(EC_HID_SET_IDLE, selRow, selCol, (val >> 8) & 0xFF, val & 0xFF);
   redrawJab();
 });
 
@@ -830,8 +893,11 @@ function handleKeyClick(row, col) {
 // EC tool HID commands - must match le_capybara.c
 const EC_HID_KEEPALIVE  = 0x00;
 const EC_HID_CAL_TOGGLE = 0x02;
+const EC_HID_AP_INC     = 0x03;
+const EC_HID_AP_DEC     = 0x04;
 const EC_HID_JAB_TOGGLE = 0x05;
 const EC_HID_SET_BOTTOM = 0x06;
+const EC_HID_SET_IDLE   = 0x07;
 
 let hidDevice       = null;
 let connected       = false;
@@ -874,6 +940,7 @@ async function connect() {
     document.getElementById('connect-btn').disabled         = true;
     document.getElementById('disconnect-btn').style.display = 'inline-block';
     document.getElementById('cal-btn').style.display        = 'inline-block';
+    document.getElementById('panels').style.display         = 'flex';
     document.getElementById('jab-section').style.display    = 'block';
     updateGraphDropdowns();
 
@@ -900,11 +967,11 @@ async function disconnect() {
   document.getElementById('connect-btn').disabled         = false;
   document.getElementById('disconnect-btn').style.display = 'none';
   document.getElementById('cal-btn').style.display        = 'none';
+  document.getElementById('panels').style.display         = 'none';
   document.getElementById('jab-section').style.display    = 'none';
   document.getElementById('status').className             = '';
   document.getElementById('status').textContent           = '○  not connected';
   document.getElementById('cal-banner').style.display     = 'none';
-  document.getElementById('config-line').textContent      = '';
   document.getElementById('tables').innerHTML             = '';
   document.getElementById('error').textContent            = '';
 }
@@ -924,6 +991,7 @@ function onDisconnect() {
   document.getElementById('connect-btn').disabled         = false;
   document.getElementById('disconnect-btn').style.display = 'none';
   document.getElementById('cal-btn').style.display        = 'none';
+  document.getElementById('panels').style.display         = 'none';
   document.getElementById('jab-section').style.display    = 'none';
 }
 
@@ -981,6 +1049,8 @@ document.getElementById('tables').addEventListener('click', e => {
 btnClick('connect-btn',    connect);
 btnClick('disconnect-btn', disconnect);
 btnClick('cal-btn',        () => sendCmd(EC_HID_CAL_TOGGLE));
+btnClick('act-down-btn', () => sendCmd(EC_HID_AP_DEC));
+btnClick('act-up-btn',   () => sendCmd(EC_HID_AP_INC));
 btnClick('jab-btn', () => {
   if (jabRecording) {
     sendCmd(EC_HID_JAB_TOGGLE, 0, 0);

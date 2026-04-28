@@ -75,6 +75,9 @@ void ecsm_jab_toggle(uint8_t row, uint8_t col);
 /// @brief Override bottoming value for a single key and persist to EEPROM
 void ecsm_set_bottom(uint8_t row, uint8_t col, uint16_t value);
 
+/// @brief Override idle value for a single key and persist to EEPROM
+void ecsm_set_idle(uint8_t row, uint8_t col, uint16_t value);
+
 /// Read capacitive sensor raw ADC value
 uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col);
 
