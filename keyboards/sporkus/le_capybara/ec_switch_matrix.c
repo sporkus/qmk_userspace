@@ -38,9 +38,47 @@ static uint32_t ecsm_is_tuning = 1e5; // Tunes ec config until this counter reac
 bool ecsm_bottoming_cal_active = false;
 bool ecsm_tui_active = false;
 
+static bool     ecsm_jab_streaming = false;
+static uint8_t  ecsm_jab_row = 0, ecsm_jab_col = 0;
+#define JAB_BATCH 10
+static uint16_t ecsm_jab_batch[JAB_BATCH];
+static uint8_t  ecsm_jab_batch_count = 0;
+
 static uint32_t ec_hid_last_keepalive = 0;
 static bool     ec_hid_was_connected  = false;
 #define EC_HID_TIMEOUT_MS 5000
+
+// forward declaration — ec_hid_print is defined after the HID helpers below
+static void ec_hid_print(const char *str);
+
+static void ecsm_jab_flush(void) {
+    if (ecsm_jab_batch_count == 0) return;
+    char buf[JAB_BATCH * 6 + 10];
+    int pos = snprintf(buf, sizeof(buf), "EC_JAB:");
+    for (uint8_t i = 0; i < ecsm_jab_batch_count; i++)
+        pos += snprintf(buf + pos, sizeof(buf) - pos, i ? ",%u" : "%u", ecsm_jab_batch[i]);
+    snprintf(buf + pos, sizeof(buf) - pos, "\n");
+    ec_hid_print(buf);
+    ecsm_jab_batch_count = 0;
+}
+
+void ecsm_jab_start(uint8_t row, uint8_t col) {
+    ecsm_jab_row         = row;
+    ecsm_jab_col         = col;
+    ecsm_jab_batch_count = 0;
+    ecsm_jab_streaming   = true;
+    ec_hid_print("EC_JAB_START\n");
+}
+
+void ecsm_jab_stop(void) {
+    ecsm_jab_flush();
+    ecsm_jab_streaming = false;
+    ec_hid_print("EC_JAB_END\n");
+}
+
+void ecsm_jab_toggle(uint8_t row, uint8_t col) {
+    ecsm_jab_streaming ? ecsm_jab_stop() : ecsm_jab_start(row, col);
+}
 
 void ec_hid_keepalive(void) {
     ec_hid_last_keepalive = timer_read32();
@@ -64,8 +102,7 @@ static int8_t  ecsm_tui_dump_line = -1;
 static uint8_t ecsm_tui_adc_row = 0;
 static uint32_t ecsm_cal_tune_remaining = 0;
 #define CAL_TUNE_CYCLES 3000  // baseline tuning duration at start of cal mode (~3s at 1kHz)
-static bool     ecsm_pressing[EC_MATRIX_ROWS][EC_MATRIX_COLS];     // key currently above cal threshold
-static uint16_t ecsm_reported_max[EC_MATRIX_ROWS][EC_MATRIX_COLS]; // last printed max per key
+static uint16_t ecsm_reported_max[EC_MATRIX_ROWS][EC_MATRIX_COLS]; // last reported bottoming max per key
 static bool ecsm_cal_saved_debug;
 static bool ecsm_cal_saved_debug_kb;
 
@@ -308,7 +345,12 @@ void ecsm_init(void) {
 
 void ecsm_update_tuning_data(int16_t new_value, uint8_t row, uint8_t col) {
     int16_t idle = ecsm_tuning_data[row][col];
-    if (new_value < idle + (DEFAULT_BOTTOM_ADC - idle) * ACTUATION_DEPTH / 100) {
+    // Use calibrated bottom when available; pre-travel plateau readings can otherwise
+    // drift idle upward if the DEFAULT_BOTTOM_ADC threshold is too permissive.
+    int16_t ref_bottom = (ecsm_config.bottoming_configured && ecsm_config.bottoming[row][col] > idle)
+                         ? (int16_t)ecsm_config.bottoming[row][col]
+                         : DEFAULT_BOTTOM_ADC;
+    if (new_value < idle + (ref_bottom - idle) * CALIBRATION_MIN_TRAVEL / 100) {
         float curr = ecsm_tuning_data[row][col];
         float adjusted = curr + ((float)new_value - curr) * 0.02;
         ecsm_tuning_data[row][col] = round(adjusted);
@@ -455,11 +497,10 @@ void ecsm_print_debug(void) {
 static void ecsm_cal_begin_bottoming_phase(void) {
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
         for (int j = 0; j < EC_MATRIX_COLS; j++) {
-            ecsm_config.bottoming[i][j] = ecsm_tuning_data[i][j];
-            ecsm_reported_max[i][j]     = ecsm_tuning_data[i][j];
+            ecsm_config.bottoming[i][j]    = ecsm_tuning_data[i][j];
+            ecsm_reported_max[i][j]        = ecsm_tuning_data[i][j];
         }
     }
-    memset(ecsm_pressing, 0, sizeof(ecsm_pressing));
     ec_hid_print("EC_EVENT:calTuningDone\n");
     ecsm_tui_dump_line = 0;
     uprintln("Baseline tuning done. Bottom all keys then press EC_CAL again.");
@@ -496,6 +537,14 @@ static void ecsm_bottoming_cal_save(void) {
     ec_hid_print("EC_EVENT:calSaved\n");
 }
 
+void ecsm_set_bottom(uint8_t row, uint8_t col, uint16_t value) {
+    if (row >= EC_MATRIX_ROWS || col >= EC_MATRIX_COLS) return;
+    ecsm_config.bottoming[row][col]   = value;
+    ecsm_config.bottoming_configured  = true;
+    ecsm_update_thresholds();
+    ecsm_config_update();
+}
+
 void ecsm_bottoming_cal_toggle(void) {
     if (ecsm_bottoming_cal_active) {
         ecsm_bottoming_cal_save();
@@ -513,6 +562,11 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
             uint16_t adc = ecsm_readkey_raw(row, col);
             ecsm_sw_value[row][col] = adc;
             updated |= ecsm_update_key(&current_matrix[row], row, col, adc);
+
+            if (ecsm_jab_streaming && row == ecsm_jab_row && col == ecsm_jab_col) {
+                ecsm_jab_batch[ecsm_jab_batch_count++] = adc;
+                if (ecsm_jab_batch_count >= JAB_BATCH) ecsm_jab_flush();
+            }
 
             if (! ecsm_config.configured) {
                 if (ecsm_is_tuning > 0) {
@@ -533,22 +587,15 @@ bool ecsm_matrix_scan(matrix_row_t current_matrix[]) {
                     // Phase 1: retune baseline with hands off
                     ecsm_update_tuning_data(adc, row, col);
                 } else {
-                    // Phase 2: record per-key bottoming max
+                    // Phase 2: track running max per key — update immediately on each scan
                     int16_t idle = ecsm_tuning_data[row][col];
                     bool above = adc > (uint16_t)(idle + (DEFAULT_BOTTOM_ADC - idle) * CALIBRATION_MIN_TRAVEL / 100);
-
-                    if (adc > ecsm_config.bottoming[row][col])
+                    if (above && adc > ecsm_config.bottoming[row][col]) {
                         ecsm_config.bottoming[row][col] = adc;
-
-                    if (above && !ecsm_pressing[row][col]) {
-                        ecsm_pressing[row][col] = true;
-                    } else if (!above && ecsm_pressing[row][col]) {
-                        ecsm_pressing[row][col] = false;
-                        if (ecsm_config.bottoming[row][col] > ecsm_reported_max[row][col]) {
-                            ecsm_reported_max[row][col] = ecsm_config.bottoming[row][col];
-                            uprintf("  R%d,C%d bottomed: %u\n", row, col, ecsm_config.bottoming[row][col]);
-                            char kbuf[32];
-                            snprintf(kbuf, sizeof(kbuf), "EC_KEY_BOTTOM:%d,%d:%u\n", row, col, ecsm_config.bottoming[row][col]);
+                        if (adc > ecsm_reported_max[row][col]) {
+                            ecsm_reported_max[row][col] = adc;
+                            char kbuf[48];
+                            snprintf(kbuf, sizeof(kbuf), "EC_KEY_BOTTOM:%d,%d:%u\n", row, col, adc);
                             ec_hid_print(kbuf);
                         }
                     }

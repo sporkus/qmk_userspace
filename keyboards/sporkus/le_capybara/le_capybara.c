@@ -34,6 +34,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 #define EC_HID_CAL_TOGGLE 0x02
 #define EC_HID_AP_INC     0x03
 #define EC_HID_AP_DEC     0x04
+#define EC_HID_JAB_TOGGLE  0x05
+#define EC_HID_SET_BOTTOM  0x06
 
 // Only stamps a timer - no raw_hid_send allowed inside the receive callback (via.c constraint).
 // ec_hid_task() in ec_switch_matrix.c reads the timer from the scan loop and does the toggle there.
@@ -44,6 +46,8 @@ static void ec_hid_cmd(uint8_t *data, uint8_t length) {
         case EC_HID_CAL_TOGGLE: ecsm_bottoming_cal_toggle();    break;
         case EC_HID_AP_INC:     ecsm_ap_inc();                  break;
         case EC_HID_AP_DEC:     ecsm_ap_dec();                  break;
+        case EC_HID_JAB_TOGGLE: ecsm_jab_toggle(data[2], data[3]); break;
+        case EC_HID_SET_BOTTOM: ecsm_set_bottom(data[2], data[3], ((uint16_t)data[4] << 8) | data[5]); break;
     }
     // Zero prefix so via.c echoes all-zeros back; onReport skips zero-only packets.
     data[0] = 0x00;

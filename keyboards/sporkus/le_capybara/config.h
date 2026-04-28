@@ -26,7 +26,7 @@
 #define DEFAULT_IDLE 500           // default idle ADC before tuning completes
 #define CALIBRATION_MIN_TRAVEL 10  // minimum travel as % of expected travel to count a key as bottomed
 #define DEFAULT_BOTTOM_ADC 950     // assumed bottom ADC reading before bottoming calibration
-#define TRAVEL_CURVE_GAMMA 2.2f    // power curve for actuation: >1 linearises EC's nonlinear capacitance response; 1.0 = linear
+#define TRAVEL_CURVE_GAMMA 1.5f    // power curve for actuation: >1 linearises EC's nonlinear capacitance response; 1.0 = linear
 // #define ECSM_DEBUG         // enables periodic ADC/matrix dumps to console (noisy, use GUI instead)
 #define EC_MATRIX            // allows ec code to be enabled with ifdef
 

@@ -33,12 +33,29 @@ body {
 #status {
   color: #888888;
 }
-#status.active {
-  color: #33FF33;
+
+#cal-banner {
+  display: none;
+  margin: 12px 0;
+  padding: 14px 20px;
+  border: 1px solid #FF8800;
+  background: #1a0f00;
+  color: #FF8800;
+  font-size: 13px;
+  max-width: 600px;
+}
+#cal-banner .cal-phase {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #885500;
+  margin-bottom: 4px;
+}
+#cal-banner .cal-msg {
+  color: #FFA500;
   font-weight: bold;
 }
 
-#connect-btn, #disconnect-btn, #cal-btn {
+#connect-btn, #disconnect-btn, #cal-btn, #jab-btn, #clear-btn {
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
   padding: 4px 14px;
@@ -71,6 +88,86 @@ body {
   border-color: #FF8800;
 }
 
+#jab-btn {
+  color: #888;
+  border-color: #555;
+}
+#jab-btn:hover { background: #1a1a1a; }
+#jab-btn.active {
+  color: #FF4488;
+  border-color: #FF4488;
+}
+
+#clear-btn {
+  color: #888;
+  border-color: #555;
+}
+#clear-btn:hover { background: #1a1a1a; }
+
+#jab-section {
+  margin-top: 24px;
+  max-width: 900px;
+  display: none;
+}
+#jab-canvases {
+  display: flex;
+  gap: 10px;
+}
+.jab-panel {
+  flex: 1;
+  min-width: 0;
+}
+.jab-panel-label {
+  color: #555;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.jab-cv {
+  display: block;
+  width: 100%;
+  height: 200px;
+  background: #111111;
+  border: 1px solid #2a2a2a;
+}
+#jab-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: #666;
+  flex-wrap: wrap;
+}
+#gamma-slider {
+  accent-color: #FF8800;
+  width: 180px;
+  cursor: pointer;
+}
+#gamma-val   { color: #FF8800; min-width: 28px; }
+#bottom-val  { color: #33AAFF; min-width: 28px; }
+#bottom-slider { accent-color: #33AAFF; width: 140px; cursor: pointer; }
+#jab-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 22px;
+  flex-wrap: wrap;
+}
+.jab-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid #444;
+  color: #aaa;
+  background: #161616;
+}
+#jab-analysis {
+  margin-top: 8px;
+  color: #666;
+  line-height: 1.8;
+  min-height: 1em;
+}
+#jab-analysis code  { color: #FF8800; }
+#jab-analysis .hi   { color: #ffffff; }
+
 #error {
   color: #FF4444;
   margin-bottom: 10px;
@@ -83,57 +180,50 @@ body {
   min-height: 1em;
 }
 
-#tables {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.tbl-wrap { overflow-x: auto; }
+#tables { overflow-x: auto; }
 
 table {
   border-collapse: collapse;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 th {
-  color: #AAAAAA;
-  font-weight: bold;
-  text-align: right;
-  padding: 1px 8px;
+  color: #555;
+  font-weight: normal;
+  text-align: center;
+  padding: 2px 6px;
   min-width: 52px;
 }
-th.row-label {
+th.row-label { text-align: left; min-width: 36px; color: #444; }
+th.tbl-header {
   text-align: left;
-  min-width: 40px;
-  color: #AAAAAA;
-}
-th.section-header {
-  text-align: left;
-  padding-bottom: 4px;
-  min-width: 0;
+  padding-bottom: 6px;
+  color: #555;
+  font-size: 11px;
+  letter-spacing: 0.05em;
 }
 
-td {
-  text-align: right;
-  padding: 1px 8px;
+td.row-label { text-align: left; color: #555; min-width: 36px; padding: 3px 6px; }
+
+td.key-cell {
+  text-align: center;
+  padding: 4px 6px;
   min-width: 52px;
-  color: #555555;
+  cursor: pointer;
+  border: 1px solid transparent;
+  vertical-align: middle;
 }
-td.row-label { text-align: left; color: #888888; min-width: 40px; }
-td.missing   { color: #444444; }
-td.cal-ok    { color: #33FF33; }
-td.cal-no    { color: #555555; }
-td.actuated  { color: #FF2222; }
-td.at-rest   { color: #555555; }
-td.adc-val   { color: #aaaaaa; }
+td.key-cell:hover { background: #1a1a1a; }
+td.key-cell.sel   { border-color: #33AAFF55; background: #0a1520; }
 
-#help {
-  color: #555555;
-  margin-top: 20px;
-}
+.key-travel { font-size: 12px; }
+.key-adc    { font-size: 10px; color: #444; margin-top: 1px; }
+
+td.key-cell.actuated .key-travel { color: #FF4422; }
+td.key-cell.at-rest  .key-travel { color: #888; }
+td.key-cell.missing  .key-travel { color: #333; }
 
 .unsupported {
   color: #FF4444;
@@ -152,9 +242,39 @@ td.adc-val   { color: #aaaaaa; }
 </div>
 
 <div id="error"></div>
+<div id="cal-banner">
+  <div class="cal-phase"></div>
+  <div class="cal-msg"></div>
+</div>
 <div id="config-line"></div>
+<div id="jab-section">
+  <div id="jab-canvases">
+    <div class="jab-panel">
+      <div class="jab-panel-label">Raw ADC</div>
+      <canvas id="jab-cv-raw" class="jab-cv"></canvas>
+    </div>
+    <div class="jab-panel">
+      <div class="jab-panel-label">Travel % (gamma transformed)</div>
+      <canvas id="jab-cv-xform" class="jab-cv"></canvas>
+    </div>
+  </div>
+  <div id="jab-chips"></div>
+  <div id="jab-controls">
+    <button id="jab-btn" tabindex="-1">Start Graph</button>
+    <button id="clear-btn" tabindex="-1">Clear</button>
+    <span style="color:#333; margin-left:4px">|</span>
+    <span>gamma</span>
+    <input type="range" id="gamma-slider" min="0.5" max="6" step="0.1" value="3.0">
+    <span id="gamma-val">3.0</span>
+    <span style="color:#444; margin-left:4px">— adjust until transformed trace looks linear</span>
+    <span style="color:#333; margin-left:8px">|</span>
+    <span>bottom</span>
+    <input type="range" id="bottom-slider" min="300" max="1023" step="1" value="800">
+    <span id="bottom-val">—</span>
+  </div>
+  <div id="jab-analysis"></div>
+</div>
 <div id="tables"></div>
-<div id="help">EC_TUI = toggle stream &nbsp;·&nbsp; EC_CAL / Calibrate button = toggle calibration</div>
 
 <script>
 'use strict';
@@ -212,6 +332,10 @@ function parseLine(line, s) {
   if (idx !== -1) line = line.substring(idx + 2);
   if (!line.startsWith('EC_')) return;
 
+  // No-colon events
+  if (line === 'EC_JAB_START') { jabHandleStart(); return; }
+  if (line === 'EC_JAB_END')   { jabHandleEnd();   return; }
+
   const colon = line.indexOf(':');
   if (colon === -1) return;
   const tag  = line.substring(0, colon);
@@ -224,6 +348,7 @@ function parseLine(line, s) {
     case 'EC_ADC':        parseADCRow(body, s);          break;
     case 'EC_KEY_BOTTOM': parseKeyBottom(body, s);       break;
     case 'EC_EVENT':      parseEvent(body, s);           break;
+    case 'EC_JAB':        jabHandleValues(body);         break;
   }
 }
 
@@ -251,6 +376,7 @@ function parseConfig(body, s) {
 
   s.config.rows             = rows;
   s.config.cols             = cols;
+  updateGraphDropdowns();
   s.config.actuationOffset  = parseInt(kv.act)            || 0;
   s.config.releaseOffset    = parseInt(kv.rel)            || 0;
   s.config.minTravel        = parseInt(kv.min_travel)     || 0;
@@ -258,7 +384,16 @@ function parseConfig(body, s) {
   s.config.configured       = kv.configured    === '1';
   s.config.bottomingCal     = kv.bottoming_cal === '1';
   const gammaScaled = parseInt(kv.gamma) || 0;
-  if (gammaScaled > 0) s.config.gamma = gammaScaled / 100.0;
+  if (gammaScaled > 0) {
+    s.config.gamma = gammaScaled / 100.0;
+    if (!jabGammaSeeded) {
+      jabGamma       = s.config.gamma;
+      jabGammaSeeded = true;
+      document.getElementById('gamma-slider').value    = jabGamma;
+      document.getElementById('gamma-val').textContent = jabGamma.toFixed(1);
+      redrawJab();
+    }
+  }
 }
 
 function parseCalRow(body, s, kind) {
@@ -270,6 +405,7 @@ function parseCalRow(body, s, kind) {
     if (c >= s.config.cols) return;
     s.cal[row][c][kind] = v;
   });
+  if (kind === 'bottom') syncBottomSlider();
 }
 
 function parseADCRow(body, s) {
@@ -334,23 +470,27 @@ function render() {
     return;
   }
 
-  const calBtn = document.getElementById('cal-btn');
+  const calBtn    = document.getElementById('cal-btn');
+  const banner    = document.getElementById('cal-banner');
+  const bannerPh  = banner.querySelector('.cal-phase');
+  const bannerMsg = banner.querySelector('.cal-msg');
+
+  statusEl.className   = '';
+  statusEl.textContent = '● connected';
 
   if (s.calPhase === 1) {
-    statusEl.className   = 'active';
-    statusEl.textContent = '● PHASE 1: lift all fingers — tuning baseline…';
+    banner.style.display  = 'block';
+    bannerPh.textContent  = 'CALIBRATION — PHASE 1 OF 2';
+    bannerMsg.textContent = 'Lift all fingers and keep keys at rest — tuning baseline…';
   } else if (s.calPhase === 2) {
-    statusEl.className   = 'active';
-    statusEl.textContent = '● PHASE 2: bottom every key, then press EC_CAL to save';
-  } else if (s.tuiMode) {
-    statusEl.className   = '';
-    statusEl.textContent = '○ TUI active — press EC_CAL to calibrate';
+    banner.style.display  = 'block';
+    bannerPh.textContent  = 'CALIBRATION — PHASE 2 OF 2';
+    bannerMsg.textContent = 'Bottom every key fully, then press Calibrate to save.';
   } else {
-    statusEl.className   = '';
-    statusEl.textContent = '○ press EC_TUI on keyboard to stream data';
+    banner.style.display  = 'none';
   }
 
-  calBtn.className = s.calMode ? 'active' : '';
+  calBtn.className   = s.calMode ? 'active' : '';
   calBtn.textContent = s.calMode ? 'Save Cal' : 'Calibrate';
 
   const gamma = s.config.gamma > 0 ? s.config.gamma : 1;
@@ -360,76 +500,273 @@ function render() {
     `curve gamma: ${gamma.toFixed(2)}  ` +
     `(1.0 = linear, higher = more physical travel per % actuation)`;
 
-  tablesEl.innerHTML =
-    wrapTable('[Bottoming]',  renderBottomingRows(s), s.config.cols) +
-    wrapTable('[ADC values]', renderADCRows(s),       s.config.cols) +
-    wrapTable('[Travel %]',   renderTravelRows(s),    s.config.cols);
+  tablesEl.innerHTML = renderKeyMatrix(s);
+  tablesEl.querySelectorAll('td[data-row]').forEach(td => {
+    td.onclick = () => handleKeyClick(+td.dataset.row, +td.dataset.col);
+  });
 }
 
-function wrapTable(label, rowsHtml, cols) {
-  const headers = Array.from({length: cols}, (_, c) => `<th>C${c}</th>`).join('');
-  return `
-    <div class="tbl-wrap">
-      <table>
-        <tr><th class="section-header" colspan="${cols + 1}">${label}</th></tr>
-        <tr><th class="row-label"></th>${headers}</tr>
-        ${rowsHtml}
-      </table>
-    </div>`;
-}
-
-function renderBottomingRows(s) {
-  let html = '';
+function renderKeyMatrix(s) {
+  const headers = Array.from({length: s.config.cols}, (_, c) => `<th>C${c}</th>`).join('');
+  let rows = '';
   for (let r = 0; r < s.config.rows; r++) {
-    html += `<tr><td class="row-label">R${r}</td>`;
-    for (let c = 0; c < s.config.cols; c++) {
-      const cal = s.cal[r][c];
-      if (cal.idle === 0 && cal.bottom === 0) {
-        html += `<td class="missing">✗</td>`;
-      } else if (keyCalibrated(s, r, c)) {
-        html += `<td class="cal-ok">${cal.bottom}</td>`;
-      } else {
-        html += `<td class="cal-no">${cal.bottom}</td>`;
-      }
-    }
-    html += '</tr>';
-  }
-  return html;
-}
-
-function renderADCRows(s) {
-  let html = '';
-  for (let r = 0; r < s.config.rows; r++) {
-    html += `<tr><td class="row-label">R${r}</td>`;
-    for (let c = 0; c < s.config.cols; c++) {
-      const live = s.live[r][c];
-      html += live.valid
-        ? `<td class="adc-val">${live.adc}</td>`
-        : `<td class="missing">✗</td>`;
-    }
-    html += '</tr>';
-  }
-  return html;
-}
-
-function renderTravelRows(s) {
-  let html = '';
-  for (let r = 0; r < s.config.rows; r++) {
-    html += `<tr><td class="row-label">R${r}</td>`;
+    rows += `<tr><td class="row-label">R${r}</td>`;
     for (let c = 0; c < s.config.cols; c++) {
       const live = s.live[r][c];
       const cal  = s.cal[r][c];
-      if (!live.valid || (!keyCalibrated(s, r, c) && cal.idle === 0)) {
-        html += `<td class="missing">✗</td>`;
+      const sel  = r === selRow && c === selCol ? ' sel' : '';
+      if (!live.valid) {
+        rows += `<td class="key-cell missing${sel}" data-row="${r}" data-col="${c}"><div class="key-travel">✗</div></td>`;
       } else {
         const t   = live.travel;
         const cls = t >= s.config.actuationOffset ? 'actuated' : 'at-rest';
-        html += `<td class="${cls}">${Math.round(t)}%</td>`;
+        const btm = keyCalibrated(s, r, c) ? `<div class="key-adc">${cal.bottom} / ${live.adc}</div>` : `<div class="key-adc">${live.adc}</div>`;
+        rows += `<td class="key-cell ${cls}${sel}" data-row="${r}" data-col="${c}"><div class="key-travel">${Math.round(t)}%</div>${btm}</td>`;
       }
     }
-    html += '</tr>';
+    rows += '</tr>';
   }
-  return html;
+  return `<div class="tbl-wrap"><table>
+    <tr><th class="tbl-header" colspan="${s.config.cols + 1}">KEY MATRIX — click any key to graph</th></tr>
+    <tr><th class="row-label"></th>${headers}</tr>
+    ${rows}
+  </table></div>`;
+}
+
+// ─── Jab capture ──────────────────────────────────────────────────────────────
+
+let selRow = 0, selCol = 0;  // source of truth for selected key
+
+function setSelKey(row, col) {
+  selRow = row;
+  selCol = col;
+}
+
+let jabSamples      = [];
+let jabRecording    = false;
+let jabCurrentValue = 0;
+let jabGamma        = 1.0;
+let jabGammaSeeded  = false;
+
+function jabHandleStart() {
+  jabSamples      = [];
+  jabRecording    = true;
+  jabCurrentValue = 0;
+  updateRawLabel();
+  syncBottomSlider();
+  document.getElementById('jab-analysis').textContent = '';
+  document.getElementById('jab-btn').textContent      = 'Stop';
+  document.getElementById('jab-btn').classList.add('active');
+  redrawJab();
+}
+
+function jabHandleValues(body) {
+  if (!jabRecording) return;
+  const vals = parseCSV(body);
+  vals.forEach(v => jabSamples.push(v));
+  if (vals.length > 0) jabCurrentValue = vals[vals.length - 1];
+  redrawJab();
+}
+
+function jabHandleEnd() {
+  jabRecording = false;
+  document.getElementById('jab-btn').textContent = 'Start Graph';
+  document.getElementById('jab-btn').classList.remove('active');
+  redrawJab();
+}
+
+function jabClear() {
+  jabSamples      = [];
+  jabCurrentValue = 0;
+  redrawJab();
+}
+
+function jabRefs() {
+  const cal   = state.cal[selRow] && state.cal[selRow][selCol];
+  const calOk = cal && cal.idle > 0 && cal.bottom > cal.idle;
+  const idle   = calOk ? cal.idle   : (jabSamples.length ? Math.min(...jabSamples) : 0);
+  const bottom = calOk ? cal.bottom : (jabSamples.length ? Math.max(...jabSamples) : 1);
+  const actPct = state.config.actuationOffset || 50;
+  const actAdc = idle + (bottom - idle) * Math.pow(actPct / 100, 1 / jabGamma);
+  return { idle, bottom, actPct, actAdc, calOk };
+}
+
+function updateJabChips({ idle, bottom }) {
+  const el = document.getElementById('jab-chips');
+  if (!el) return;
+  const chips = [];
+  const travel = bottom - idle || 1;
+  const xfrm = adc => Math.pow(Math.max(0, Math.min(1, (adc - idle) / travel)), jabGamma) * 100;
+
+  if (jabCurrentValue > 0) {
+    const pct = xfrm(jabCurrentValue);
+    chips.push(`<span class="jab-chip live">ADC ${jabCurrentValue} &nbsp; ${pct.toFixed(0)}%</span>`);
+  }
+  el.innerHTML = chips.join('');
+}
+
+function redrawJab() {
+  const r = jabRefs();
+  drawJabRaw(r);
+  drawJabXform(r);
+  updateJabChips(r);
+  updateJabAnalysis(r);
+}
+
+// Shared helper: draw a horizontal line
+function hline(ctx, y, W, color, dashed) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1;
+  if (dashed) ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  ctx.restore();
+}
+
+function drawJabRaw({ idle, bottom, actPct, actAdc }) {
+  const cv  = document.getElementById('jab-cv-raw');
+  if (!cv) return;
+  const W   = cv.width  = cv.offsetWidth || 400;
+  const H   = cv.height = 200;
+  const ctx = cv.getContext('2d');
+  const PAD = 8, LP = 38;
+
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const range = bottom - idle || 1;
+  const toX = i => LP + (i / Math.max(jabSamples.length - 1, 1)) * (W - LP - PAD);
+  const toY = v => H - PAD - Math.max(0, Math.min(1, (v - idle) / range)) * (H - 2 * PAD);
+
+  // Reference lines
+  hline(cv.getContext('2d'), toY(idle),   W, '#2a2a2a');
+  hline(cv.getContext('2d'), toY(bottom), W, '#2a3a2a');
+  hline(cv.getContext('2d'), toY(actAdc), W, '#FF880055', true);
+
+  // Y-axis labels
+  ctx.fillStyle = '#444'; ctx.font = '10px Courier New'; ctx.textAlign = 'right';
+  [[idle, 'idle'], [actAdc, `act`], [bottom, 'btm']].forEach(([v, lbl]) => {
+    ctx.fillStyle = v === actAdc ? '#FF8800aa' : '#444';
+    ctx.fillText(`${lbl} ${Math.round(v)}`, LP - 2, Math.min(Math.max(toY(v) + 3, 10), H - 2));
+  });
+  ctx.textAlign = 'left';
+
+  // Trace
+  if (jabSamples.length > 1) {
+    ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    jabSamples.forEach((v, i) => { const x = toX(i), y = toY(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  }
+
+  // Floating current value
+  if (jabCurrentValue > 0) {
+    hline(ctx, toY(jabCurrentValue), W, '#66666688', true);
+  }
+}
+
+function drawJabXform({ idle, bottom, actPct }) {
+  const cv  = document.getElementById('jab-cv-xform');
+  if (!cv) return;
+  const W   = cv.width  = cv.offsetWidth || 400;
+  const H   = cv.height = 200;
+  const ctx = cv.getContext('2d');
+  const PAD = 8, LP = 32;
+
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const travel = bottom - idle || 1;
+  const toX  = i   => LP + (i / Math.max(jabSamples.length - 1, 1)) * (W - LP - PAD);
+  const toY  = pct => H - PAD - Math.max(0, Math.min(1, pct / 100)) * (H - 2 * PAD);
+  const xfrm = adc => Math.pow(Math.max(0, Math.min(1, (adc - idle) / travel)), jabGamma) * 100;
+
+  // Reference lines at 0%, actuation%, 100%
+  hline(ctx, toY(0),      W, '#2a2a2a');
+  hline(ctx, toY(100),    W, '#2a3a2a');
+  hline(ctx, toY(actPct), W, '#FF880055', true);
+
+  // Y labels
+  ctx.font = '10px Courier New'; ctx.textAlign = 'right';
+  [[0, '0%'], [actPct, `${actPct}%`], [100, '100%']].forEach(([p, lbl]) => {
+    ctx.fillStyle = p === actPct ? '#FF8800aa' : '#444';
+    ctx.fillText(lbl, LP - 2, Math.min(Math.max(toY(p) + 3, 10), H - 2));
+  });
+  ctx.textAlign = 'left';
+
+  // Transformed trace
+  if (jabSamples.length > 1) {
+    ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    jabSamples.forEach((v, i) => { const x = toX(i), y = toY(xfrm(v)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  }
+
+  // Floating current (transformed)
+  if (jabCurrentValue > 0) {
+    hline(ctx, toY(xfrm(jabCurrentValue)), W, '#66666688', true);
+  }
+}
+
+function updateJabAnalysis({ idle, bottom, actAdc, calOk }) {
+  const el = document.getElementById('jab-analysis');
+  if (!jabSamples.length) { el.textContent = ''; return; }
+  if (!calOk) { el.textContent = 'no bottoming calibration — run bottoming cal first'; return; }
+  el.innerHTML =
+    `idle <span class="hi">${idle}</span> &nbsp;·&nbsp; ` +
+    `bottom <span class="hi">${bottom}</span> &nbsp;·&nbsp; ` +
+    `actuation threshold <span class="hi">${Math.round(actAdc)}</span> raw ADC &nbsp;·&nbsp; ` +
+    `<code>TRAVEL_CURVE_GAMMA ${jabGamma.toFixed(1)}f</code>`;
+}
+
+document.getElementById('gamma-slider').addEventListener('input', e => {
+  jabGamma = parseFloat(e.target.value);
+  document.getElementById('gamma-val').textContent = jabGamma.toFixed(1);
+  state.config.gamma = jabGamma;
+  redrawJab();
+  render();
+});
+
+function updateRawLabel() {
+  document.getElementById('jab-cv-raw').closest('.jab-panel').querySelector('.jab-panel-label').textContent = `Raw ADC — R${selRow} C${selCol}`;
+}
+
+function syncBottomSlider() {
+  const cal = state.cal[selRow] && state.cal[selRow][selCol];
+  const val = (cal && cal.bottom > 0) ? cal.bottom : null;
+  const slider  = document.getElementById('bottom-slider');
+  const display = document.getElementById('bottom-val');
+  if (val !== null) {
+    slider.value      = val;
+    display.textContent = val;
+  } else {
+    display.textContent = '—';
+  }
+}
+
+document.getElementById('bottom-slider').addEventListener('input', e => {
+  const val = parseInt(e.target.value);
+  document.getElementById('bottom-val').textContent = val;
+  if (state.cal[selRow] && state.cal[selRow][selCol]) state.cal[selRow][selCol].bottom = val;
+  sendCmd(EC_HID_SET_BOTTOM, selRow, selCol, (val >> 8) & 0xFF, val & 0xFF);
+  redrawJab();
+});
+
+
+function handleKeyClick(row, col) {
+  setSelKey(row, col);
+  jabSamples      = [];
+  jabCurrentValue = 0;
+  updateRawLabel();
+  syncBottomSlider();
+  if (connected) {
+    if (jabRecording) {
+      sendCmd(EC_HID_JAB_TOGGLE, 0, 0);
+      sendCmd(EC_HID_JAB_TOGGLE, selRow, selCol);
+    } else {
+      sendCmd(EC_HID_JAB_TOGGLE, selRow, selCol);
+    }
+  }
+  redrawJab();
+  render();
 }
 
 // ─── Web HID ──────────────────────────────────────────────────────────────────
@@ -437,6 +774,8 @@ function renderTravelRows(s) {
 // EC tool HID commands - must match le_capybara.c
 const EC_HID_KEEPALIVE  = 0x00;
 const EC_HID_CAL_TOGGLE = 0x02;
+const EC_HID_JAB_TOGGLE = 0x05;
+const EC_HID_SET_BOTTOM = 0x06;
 
 let hidDevice       = null;
 let connected       = false;
@@ -479,6 +818,8 @@ async function connect() {
     document.getElementById('connect-btn').disabled         = true;
     document.getElementById('disconnect-btn').style.display = 'inline-block';
     document.getElementById('cal-btn').style.display        = 'inline-block';
+    document.getElementById('jab-section').style.display    = 'block';
+    updateGraphDropdowns();
 
     await sendCmd(EC_HID_KEEPALIVE);
     keepaliveTimer = setInterval(() => sendCmd(EC_HID_KEEPALIVE), 2000);
@@ -496,14 +837,17 @@ async function disconnect() {
     try { await hidDevice.close(); } catch(_) {}
     hidDevice = null;
   }
-  connected = false;
-  state     = newECState(0, 0);
+  connected      = false;
+  state          = newECState(0, 0);
+  jabGammaSeeded = false;
 
   document.getElementById('connect-btn').disabled         = false;
   document.getElementById('disconnect-btn').style.display = 'none';
   document.getElementById('cal-btn').style.display        = 'none';
+  document.getElementById('jab-section').style.display    = 'none';
   document.getElementById('status').className             = '';
   document.getElementById('status').textContent           = '○  not connected';
+  document.getElementById('cal-banner').style.display     = 'none';
   document.getElementById('config-line').textContent      = '';
   document.getElementById('tables').innerHTML             = '';
   document.getElementById('error').textContent            = '';
@@ -517,12 +861,14 @@ function onDisconnect() {
     hidDevice.removeEventListener('disconnect', onDisconnect);
     hidDevice = null;
   }
-  connected = false;
-  lineBuf   = '';
+  connected      = false;
+  lineBuf        = '';
+  jabGammaSeeded = false;
   document.getElementById('error').textContent            = 'Keyboard disconnected.';
   document.getElementById('connect-btn').disabled         = false;
   document.getElementById('disconnect-btn').style.display = 'none';
   document.getElementById('cal-btn').style.display        = 'none';
+  document.getElementById('jab-section').style.display    = 'none';
 }
 
 function onReport(event) {
@@ -547,16 +893,24 @@ function onReport(event) {
   if (changed) render();
 }
 
-async function sendCmd(cmd) {
+async function sendCmd(cmd, ...extra) {
   if (!hidDevice || !hidDevice.opened) return;
   const buf = new Uint8Array(32);
   buf[0] = 0xEC; // EC_HID_PREFIX — falls to default case in Vial's raw_hid_receive
   buf[1] = cmd;
+  extra.forEach((v, i) => buf[2 + i] = v);
   try {
     await hidDevice.sendReport(0, buf);
   } catch(e) {
     document.getElementById('error').textContent = `Send failed: ${e.message}`;
   }
+}
+
+function updateGraphDropdowns() {
+  const rows = state.config.rows || 4;
+  const cols = state.config.cols || 10;
+  selRow = Math.min(selRow, rows - 1);
+  selCol = Math.min(selCol, cols - 1);
 }
 
 function btnClick(id, fn) {
@@ -565,6 +919,14 @@ function btnClick(id, fn) {
 btnClick('connect-btn',    connect);
 btnClick('disconnect-btn', disconnect);
 btnClick('cal-btn',        () => sendCmd(EC_HID_CAL_TOGGLE));
+btnClick('jab-btn', () => {
+  if (jabRecording) {
+    sendCmd(EC_HID_JAB_TOGGLE, 0, 0);
+  } else {
+    sendCmd(EC_HID_JAB_TOGGLE, selRow, selCol);
+  }
+});
+btnClick('clear-btn', jabClear);
 </script>
 </body>
 </html>
