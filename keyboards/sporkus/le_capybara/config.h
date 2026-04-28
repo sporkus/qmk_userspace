@@ -38,9 +38,8 @@
 #define RGB_MATRIX_LED_COUNT 11
 #define DRIVER_LED_TOTAL RGB_MATRIX_LED_COUNT
 
-// Use this option if front leds are not installed and are bypassed with solder jumper
-#define FRONT_LEDS_BYPASS
-#ifdef FRONT_LED_BYPASS
+// #define FRONT_LEDS_BYPASS  //  if front leds are not installed and are bypassed with solder jumper
+#ifdef FRONT_LEDS_BYPASS
     #undef RGB_MATRIX_LED_COUNT
     #define RGB_MATRIX_LED_COUNT 9
 #endif
@@ -50,18 +49,19 @@
 #define RGB_MODS_INDICATOR_ENABLE
 #define RGB_LAYER_INDICATOR_ENABLE
 
+#define RGB_FRONT_BRIGHTNESS_SCALE 3  // Front indicator brightness scaling (0-10)
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
 #define RGB_TRIGGER_ON_KEYDOWN
 #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 255
-#define RGB_MATRIX_HUE_STEP 4
-#define RGB_MATRIX_SAT_STEP 4
-#define RGB_MATRIX_VAL_STEP 4
+#define RGB_MATRIX_HUE_STEP 8
+#define RGB_MATRIX_SAT_STEP 8
+#define RGB_MATRIX_VAL_STEP 16
 #define RGB_MATRIX_SPD_STEP 16
 #define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_CYCLE_ALL
 #define RGB_MATRIX_DEFAULT_HUE 0
 #define RGB_MATRIX_DEFAULT_SAT 255
-#define RGB_MATRIX_DEFAULT_VAL 32
+#define RGB_MATRIX_DEFAULT_VAL 100
 #define RGB_MATRIX_DEFAULT_SPD 32
 
 #define ENABLE_RGB_MATRIX_CYCLE_ALL

@@ -46,7 +46,7 @@ These keycodes can be used in your qmk keymap or selected in vial > user keycode
 
 
 ### Calibration Tool
-For more accurate calibration, use the calibration tool in `tools/ec_calibration`.
+For more accurate calibration, use the calibration tool in `tools/ec_calibration_tool.html`.
 - [ Web (download and run in chrome) ](tools/ec_calibration/ec_calibration.html)
 
 Usage is the same for both versions:
@@ -56,7 +56,7 @@ Usage is the same for both versions:
   - Phase 2: Tunes bottom out value by pressing each key
 - Saves calibration result
 
-![calibration_tool](./calibration_tool.png)
+![calibration_tool](./calibration_tool.gif)
 
 ## More configuration in `config.h`:
 The capacitance response isn't linear - a default gamma curve is applied to 
