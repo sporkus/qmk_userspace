@@ -456,6 +456,60 @@ function parseCSV(str) {
 
 let state = newECState(0, 0);
 
+// Persistent cell references — rebuilt only when matrix dimensions change
+let cellMap      = [];
+let tableRows    = -1;
+let tableCols    = -1;
+
+function buildTable(s) {
+  const tablesEl = document.getElementById('tables');
+  tablesEl.innerHTML = renderKeyMatrix(s);
+  tableRows = s.config.rows;
+  tableCols = s.config.cols;
+  cellMap = Array.from({length: s.config.rows}, (_, r) =>
+    Array.from({length: s.config.cols}, (_, c) =>
+      tablesEl.querySelector(`td[data-row="${r}"][data-col="${c}"]`)
+    )
+  );
+}
+
+function updateKeyCells(s) {
+  for (let r = 0; r < s.config.rows; r++) {
+    for (let c = 0; c < s.config.cols; c++) {
+      const td = cellMap[r] && cellMap[r][c];
+      if (!td) continue;
+      const live  = s.live[r][c];
+      const cal   = s.cal[r][c];
+      const isSel = r === selRow && c === selCol;
+
+      let travelEl = td.querySelector('.key-travel');
+      let adcEl    = td.querySelector('.key-adc');
+
+      if (!live.valid) {
+        td.className = 'key-cell missing' + (isSel ? ' sel' : '');
+        if (!travelEl) { td.innerHTML = '<div class="key-travel">✗</div>'; }
+        else { travelEl.textContent = '✗'; adcEl && adcEl.remove(); }
+      } else {
+        const t   = live.travel;
+        const cls = t >= s.config.actuationOffset ? 'actuated' : 'at-rest';
+        td.className = `key-cell ${cls}` + (isSel ? ' sel' : '');
+
+        const adcText = keyCalibrated(s, r, c)
+          ? `${cal.bottom} / ${live.adc}`
+          : `${live.adc}`;
+
+        if (!travelEl) {
+          td.innerHTML = `<div class="key-travel">${Math.round(t)}%</div><div class="key-adc">${adcText}</div>`;
+        } else {
+          travelEl.textContent = Math.round(t) + '%';
+          if (!adcEl) { adcEl = document.createElement('div'); adcEl.className = 'key-adc'; td.appendChild(adcEl); }
+          adcEl.textContent = adcText;
+        }
+      }
+    }
+  }
+}
+
 function render() {
   const s = state;
   const statusEl = document.getElementById('status');
@@ -467,6 +521,7 @@ function render() {
     statusEl.textContent = '○  not connected';
     configEl.textContent = '';
     tablesEl.innerHTML   = '';
+    tableRows = -1; tableCols = -1; cellMap = [];
     return;
   }
 
@@ -500,10 +555,11 @@ function render() {
     `curve gamma: ${gamma.toFixed(2)}  ` +
     `(1.0 = linear, higher = more physical travel per % actuation)`;
 
-  tablesEl.innerHTML = renderKeyMatrix(s);
-  tablesEl.querySelectorAll('td[data-row]').forEach(td => {
-    td.onclick = () => handleKeyClick(+td.dataset.row, +td.dataset.col);
-  });
+  if (s.config.rows !== tableRows || s.config.cols !== tableCols) {
+    buildTable(s);
+  } else {
+    updateKeyCells(s);
+  }
 }
 
 function renderKeyMatrix(s) {
@@ -916,6 +972,12 @@ function updateGraphDropdowns() {
 function btnClick(id, fn) {
   document.getElementById(id).addEventListener('click', e => { e.currentTarget.blur(); fn(); });
 }
+document.getElementById('tables').addEventListener('click', e => {
+  const td = e.target.closest('td[data-row]');
+  if (!td) return;
+  handleKeyClick(+td.dataset.row, +td.dataset.col);
+});
+
 btnClick('connect-btn',    connect);
 btnClick('disconnect-btn', disconnect);
 btnClick('cal-btn',        () => sendCmd(EC_HID_CAL_TOGGLE));
