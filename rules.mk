@@ -11,6 +11,6 @@ OS_DETECTION_ENABLE = yes
 DEFERRED_EXEC_ENABLE = yes
 
 INTROSPECTION_KEYMAP_C += sporkus.c
-SRC += features/swapper.c
-SRC += features/global_quick_tap.c
+# SRC += features/swapper.c
+# SRC += features/global_quick_tap.c
 

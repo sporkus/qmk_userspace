@@ -17,13 +17,13 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-      - id: set-matrix
-        run: echo "matrix=$(find keyboards -regex ".*keymaps" | sed "s|keyboards/\(.*\)/keymaps|\1|"| jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
-      - run: echo $GITHUB_OUTPUT
+      - name: Find keyboards with ${{ github.actor }} keymap
+        id: set-matrix
+        run: echo "matrix=$(find keyboards -type d -path "*/keymaps/${{ github.actor }}" | sed 's|keyboards/||' | sed 's|/keymaps/.*||' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   compile-qmk-user-keymaps:
     runs-on: ubuntu-latest
-    container: qmkfm/qmk_cli
+    container: ghcr.io/qmk/qmk_cli
     needs: list-user-keymaps
     strategy:
       fail-fast: false
@@ -61,11 +61,9 @@ jobs:
     - name: QMK compile
       run: qmk compile -j 0 -kb ${{ matrix.keyboards }} -km ${{ github.actor }}
 
-    - name: Strip keyboard name 
+    - name: Strip keyboard name
       id: keyboard-name
-      run: |
-        echo ${{ matrix.keyboards}} | sed "s|/|_|g"
-        echo "name=${{ matrix.keyboards}}" | sed "s|/|_|g" >> $GITHUB_OUTPUT
+      run: echo "name=${{ matrix.keyboards}}" | sed "s|/|_|g" >> $GITHUB_OUTPUT
 
     - name: Archive firmware
       uses: actions/upload-artifact@v4

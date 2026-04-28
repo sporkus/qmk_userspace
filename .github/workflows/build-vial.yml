@@ -12,14 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      container: ${{ steps.get-container.outputs.container }}
     steps:
       - uses: actions/checkout@v4
-      - id: set-matrix
+      - name: Find keyboards with vial keymaps
+        id: set-matrix
         run: echo "matrix=$(find keyboards -type d -name vial | sed 's/keyboards\///' | sed 's/\/keymaps.*//' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+      - name: Get container image from vial-qmk upstream
+        id: get-container
+        run: |
+          IMAGE=$(curl -fsSL https://raw.githubusercontent.com/vial-kb/vial-qmk/vial/.github/workflows/ci.yml | grep -m1 'container: ghcr.io' | awk '{print $2}')
+          echo "container=$IMAGE" >> $GITHUB_OUTPUT
 
   compile-vial:
     runs-on: ubuntu-latest
-    container: qmkfm/qmk_cli
+    container: ${{ needs.list-vial-keyboards.outputs.container }}
     needs: list-vial-keyboards
     strategy:
       fail-fast: false
@@ -54,11 +61,9 @@ jobs:
     - name: compile vial
       run: make ${{ matrix.keyboards }}:vial
 
-    - name: Strip keyboard name 
+    - name: Strip keyboard name
       id: keyboard-name
-      run: |
-        echo ${{ matrix.keyboards}} | sed "s|/|_|g"
-        echo "name=${{ matrix.keyboards}}" | sed "s|/|_|g" >> $GITHUB_OUTPUT
+      run: echo "name=${{ matrix.keyboards}}" | sed "s|/|_|g" >> $GITHUB_OUTPUT
 
     - name: Archive firmware
       uses: actions/upload-artifact@v4

@@ -172,16 +172,16 @@ void ecsm_tui_toggle(void) {
 }
 
 static inline void discharge_capacitor(void) {
-    writePinLow(DISCHARGE_PIN);
+    gpio_write_pin_low(DISCHARGE_PIN);
 }
 
 static inline void charge_capacitor(uint8_t row) {
-    writePinHigh(DISCHARGE_PIN); // Blocks discharge route
-    writePinHigh(row_pins[row]); // Send signal to row
+    gpio_write_pin_high(DISCHARGE_PIN); // Blocks discharge route
+    gpio_write_pin_high(row_pins[row]); // Send signal to row
 }
 
 static inline void disable_mux(uint8_t i) {
-    writePinHigh(mux_en_pins[i]);
+    gpio_write_pin_high(mux_en_pins[i]);
 }
 
 static inline void disable_mux_all(void) {
@@ -191,7 +191,7 @@ static inline void disable_mux_all(void) {
 }
 
 static inline void enable_mux(uint8_t i) {
-    writePinLow(mux_en_pins[i]);
+    gpio_write_pin_low(mux_en_pins[i]);
 }
 
 static inline void select_col(uint8_t col) {
@@ -199,33 +199,33 @@ static inline void select_col(uint8_t col) {
     uint8_t active_mux = (ch & 8) ? 1 : 0;
 
     disable_mux(!active_mux);
-    writePin(mux_sel_pins[0], ch & 1);
-    writePin(mux_sel_pins[1], ch & 2);
-    writePin(mux_sel_pins[2], ch & 4);
+    gpio_write_pin(mux_sel_pins[0], ch & 1);
+    gpio_write_pin(mux_sel_pins[1], ch & 2);
+    gpio_write_pin(mux_sel_pins[2], ch & 4);
     enable_mux(active_mux);
 }
 
 /// @brief hardware initialization for row pins
 static inline void init_row(void) {
     for (int i = 0; i < EC_MATRIX_ROWS; i++) {
-        setPinOutput(row_pins[i]);
-        writePinLow(row_pins[i]);
+        gpio_set_pin_output(row_pins[i]);
+        gpio_write_pin_low(row_pins[i]);
     }
 }
 
 /// @brief hardware initialization for mux
 static inline void init_mux(void) {
     for (int i = 0; i < 2; i++) {
-        setPinOutput(mux_en_pins[i]);
+        gpio_set_pin_output(mux_en_pins[i]);
     }
 
     for (int idx = 0; idx < 3; idx++) {
-        setPinOutput(mux_sel_pins[idx]);
+        gpio_set_pin_output(mux_sel_pins[idx]);
     }
 }
 
 void ecsm_config_init(void) {
-    eeconfig_read_kb_datablock(&ecsm_config);
+    eeconfig_read_kb_datablock(&ecsm_config, 0, sizeof(ecsm_config));
 
     // Clamp stored offsets — catches corrupted values from pre-percentage firmware
     if (ecsm_config.actuation_offset > 85 || ecsm_config.release_offset > 85
@@ -258,7 +258,7 @@ void ecsm_config_update(void) {
     }
 
     uprintf("Writing current actuation points to presistent storage\n");
-    eeconfig_update_kb_datablock(&ecsm_config);
+    eeconfig_update_kb_datablock(&ecsm_config, 0, sizeof(ecsm_config));
     ecsm_print_debug();
     ecsm_tui_dump_line = 0;
 }
@@ -275,7 +275,7 @@ void ecsm_eeprom_clear(void) {
             ecsm_config.bottoming[i][j] = 0;
         }
     }
-    eeconfig_update_kb_datablock(&ecsm_config);
+    eeconfig_update_kb_datablock(&ecsm_config, 0, sizeof(ecsm_config));
     ecsm_is_tuning = 1e5;
 }
 
@@ -335,8 +335,8 @@ void ecsm_init(void) {
     adc_read(adcMux);
 
     // Initialize discharge pin as discharge mode
-    writePinLow(DISCHARGE_PIN);
-    setPinOutputOpenDrain(DISCHARGE_PIN);
+    gpio_write_pin_low(DISCHARGE_PIN);
+    gpio_set_pin_output_open_drain(DISCHARGE_PIN);
 
     init_row();
     init_mux();
@@ -382,14 +382,14 @@ uint16_t ecsm_readkey_raw(uint8_t row, uint8_t col) {
 
     select_col(col);
     // Set strobe pins to idle state
-    writePinLow(row_pins[row]);
+    gpio_write_pin_low(row_pins[row]);
     ATOMIC_BLOCK_FORCEON {
         charge_capacitor(row);
         __asm__ __volatile__("nop;nop;nop;\n\t");
         sw_value = adc_read(adcMux);
     }
     // reset sensor
-    writePinLow(row_pins[row]);
+    gpio_write_pin_low(row_pins[row]);
     discharge_capacitor();
     return sw_value;
 }

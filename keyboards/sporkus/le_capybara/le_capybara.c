@@ -65,7 +65,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) { ec_hid_cmd(data, length); 
 void keyboard_post_init_kb(void) {
     #ifdef ECSM_TUNE_ON_BOOT
         ecsm_config.configured = 0;
-        eeconfig_update_kb_datablock(&ecsm_config);
+        eeconfig_update_kb_datablock(&ecsm_config, 0, sizeof(ecsm_config));
     #endif
     keyboard_post_init_user();
 }

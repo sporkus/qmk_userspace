@@ -99,3 +99,11 @@ enum layers {BASE, NUM, NAV, FN};
 #define  _RIGHT_ROW3(L1, L2, L3, L4, L5, R1, R2, R3, R4, R5, L6, L7, L8, L9, L10, R6, R7, R8, R9, R10, L11, L12, L13, L14, L15, R11, R12, R13, R14, R15, LT1, LT2, RT1, RT2) R11, R12, R13, R14, R15
 #define _RIGHT_THUMB(L1, L2, L3, L4, L5, R1, R2, R3, R4, R5, L6, L7, L8, L9, L10, R6, R7, R8, R9, R10, L11, L12, L13, L14, L15, R11, R12, R13, R14, R15, LT1, LT2, RT1, RT2) RT1, RT2
 
+#ifdef COMBO_ENABLE
+#   include "combos.h"
+#endif
+
+#ifdef KEY_OVERRIDE_ENABLE
+#   include "key_overrides.h"
+#endif
+

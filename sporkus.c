@@ -81,7 +81,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 record->event.key.row, record->event.key.col, keycode, get_mods(), record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
     #endif
 
+#ifdef GLOBAL_QUICK_TAP_ENABLE
     if (!process_global_quick_tap(keycode, record)) {return false; }
+#endif
 
     // handling non-basic keycodes in hold-taps
     switch (keycode) {
@@ -105,6 +107,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
     }
 
+    #ifdef SWAPPER_ENABLE
     update_swapper(
         &swapper_gui_tab_active, KC_LGUI, KC_TAB, GUI_TAB,
         keycode, record
@@ -114,6 +117,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         &swapper_alt_tab_active, KC_LALT, KC_TAB, ALT_TAB,
         keycode, record
     );
+    #endif
 
     return true;
 }

@@ -5,6 +5,7 @@
 #include "layout.h"
 
 #define LAYOUT_w(...)        LAYOUT(__VA_ARGS__)
+#define ___ KC_TRNS
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_w(
@@ -39,9 +40,9 @@ _______,  _______,  _______,    KC_ENT,                 KC_TAB,   _______, _____
 #ifdef ENCODER_MAP_ENABLE
 const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
     [0] =   { ENCODER_CCW_CW(KC_VOLU, KC_VOLD) },
-    [1] =   { ENCODER_CCW_CW(RGB_HUD, RGB_HUI) },
-    [2] =   { ENCODER_CCW_CW(RGB_VAD, RGB_VAI) },
-    [3] =   { ENCODER_CCW_CW(RGB_VAD, RGB_VAI) }
+    [1] =   { ENCODER_CCW_CW(_______, _______) },
+    [2] =   { ENCODER_CCW_CW(_______, _______) },
+    [3] =   { ENCODER_CCW_CW(_______, _______) }
 };
 #endif
 

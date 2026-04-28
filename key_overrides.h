@@ -9,7 +9,7 @@ const key_override_t name##_key_override = ko_make_basic(modmask, keycode, modde
 #undef KEY_OVERRIDE
 
 #define KEY_OVERRIDE(name, ...) &name##_key_override,
-const key_override_t **key_overrides = (const key_override_t *[]){
+const key_override_t *key_overrides[] = {
     #include OVERRIDE_DEF
     NULL
 };
