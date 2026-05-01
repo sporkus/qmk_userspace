@@ -7,9 +7,9 @@
 #define LAYOUT_w(...)        LAYOUT_2x2u(__VA_ARGS__)
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_w(
-                          LEFT_ROW1(_BASE),        KC_TAB,    KC_BSPC,    RIGHT_ROW1(_BASE),        \
-                          HRML(LEFT_ROW2(_BASE)),  NAV_ESC,   KC_COLN,    HRMR(RIGHT_ROW2(_BASE)),  \
-                          BRML(LEFT_ROW3(_BASE)),  KC_LSFT,   SFT_ENT,    BRMR(RIGHT_ROW3(_BASE)),  \
+                          LEFT_ROW1(_BASE),        _______,   _______,    RIGHT_ROW1(_BASE),        \
+                          HRML(LEFT_ROW2(_BASE)),  _______,   _______,    HRMR(RIGHT_ROW2(_BASE)),  \
+                          BRML(LEFT_ROW3(_BASE)),  _______,   _______,    BRMR(RIGHT_ROW3(_BASE)),  \
      KC_LCTL,  KC_LALT,   LEFT_THUMB(_BASE),       _______,   _______,    RIGHT_THUMB(_BASE),  KC_RALT, KC_RCTL
 
     ),

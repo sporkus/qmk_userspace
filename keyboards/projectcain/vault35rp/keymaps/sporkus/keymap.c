@@ -18,7 +18,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LCTL, LEFT_THUMB(_BASE),  XXX,  RIGHT_THUMB(_BASE), KC_LGUI
     ),
     [1] = LAYOUT_w(
-        LEFT_ROW1(_NUM),             RIGHT_ROW1(_NUM), DELWORD,\
+        LEFT_ROW1(_NUM),             RIGHT_ROW1(_NUM), KC_DELETE,\
         LEFT_ROW2(_NUM),             RIGHT_ROW2(_NUM),         \
         LEFT_ROW3(_NUM),             RIGHT_ROW3(_NUM),         \
         _______, LEFT_THUMB(_NUM), XXX, RIGHT_THUMB(_NUM), _______

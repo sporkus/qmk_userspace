@@ -4,6 +4,8 @@
 #include "quantum/keycodes.h"
 #include "layout.h"
 
+#define SFT_ENT RSFT_T(KC_ENTER)
+
 #define LAYOUT_w(...)        LAYOUT(__VA_ARGS__)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -14,13 +16,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 KC_LCTL,  KC_LALT,  KC_RCTL,   NUM_SPC,                 NAV_SPC,   KC_RGUI, KC_RALT, KC_RCTL
     ),
     [1] = LAYOUT_w(
-           _______,             LEFT_ROW1(_NUM),        RIGHT_ROW1(_NUM),   KC_LBRC, KC_RBRC, \
+           _______,             LEFT_ROW1(_NUM),        RIGHT_ROW1(_NUM),   _______, _______, \
            _______,             LEFT_ROW2(_NUM),        RIGHT_ROW2(_NUM),   _______, \
            _______,             LEFT_ROW3(_NUM),        RIGHT_ROW3(_NUM),   _______,          \
  _______,  _______,  _______,   _______,                KC_0,     KC_DOT,  _______, _______
     ),
     [2] = LAYOUT_w(
-           GUI_TAB,             LEFT_ROW1(_NAV),        RIGHT_ROW1(_NAV),   _______, _______, \
+           _______,             LEFT_ROW1(_NAV),        RIGHT_ROW1(_NAV),   _______, _______, \
            _______,             LEFT_ROW2(_NAV),        RIGHT_ROW2(_NAV),   _______,          \
            CW_TOGG,             LEFT_ROW3(_NAV),        RIGHT_ROW3(_NAV),   _______,          \
 _______,  _______,  _______,    KC_ENT,                 KC_TAB,   _______, _______,  _______
