@@ -17,16 +17,16 @@ enum custom_keycodes {
 
 // Homerow mod applicators — numbered L5..L1 R1..R5 from left to right
 //L5 L4 L3 L2 L1 R1 R2 R3 R4 R5
-#define HML5(k) LSFT_T(k)
+#define HML5(k) k
 #define HML4(k) LALT_T(k)
-#define HML3(k) LGUI_T(k)
-#define HML2(k) LCTL_T(k)
-#define HML1(k) k
-#define HMR1(k) k
-#define HMR2(k) RCTL_T(k)
-#define HMR3(k) RGUI_T(k)
+#define HML3(k) LCTL_T(k)
+#define HML2(k) LSFT_T(k)
+#define HML1(k) LGUI_T(k)
+#define HMR1(k) RGUI_T(k)
+#define HMR2(k) RSFT_T(k)
+#define HMR3(k) RCTL_T(k)
 #define HMR4(k) RALT_T(k)
-#define HMR5(k) RSFT_T(k)
+#define HMR5(k) k
 
 // Layers
 enum layers {BASE, NUM, NAV, FN};
@@ -51,9 +51,9 @@ enum layers {BASE, NUM, NAV, FN};
                                _______, _______,     _______, _______
 
 #define _NAV \
-    _______, _______, _______, _______, _______,     _______, _______, KC_ESC,  _______, KC_BSPC, \
-    _______, _______, _______, _______, _______,     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, \
-    CW_TOGG, _______, _______, _______, _______,     _______, KC_PGDN, KC_PGUP, _______, _______, \
+    _______, S(KC_9), S(KC_8), S(KC_7), _______,     _______, _______, KC_ESC,  _______, KC_BSPC, \
+    _______, S(KC_6), S(KC_5), S(KC_4), _______,     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, \
+    CW_TOGG, S(KC_3), S(KC_2), S(KC_1), _______,     _______, KC_PGDN, KC_PGUP, _______, _______, \
                                _______, KC_ENT,      _______,  _______
 
 #define _FN \
@@ -72,6 +72,8 @@ enum layers {BASE, NUM, NAV, FN};
 #define HM_S     HML4(KC_S)
 #define HM_D     HML3(KC_D)
 #define HM_F     HML2(KC_F)
+#define HM_G     HML1(KC_z)
+#define HM_H     HMR1(KC_H)
 #define HM_J     HMR2(KC_J)
 #define HM_K     HMR3(KC_K)
 #define HM_L     HMR4(KC_L)
@@ -81,8 +83,8 @@ enum layers {BASE, NUM, NAV, FN};
 
 #define HRML(halfrow) _HRML(halfrow)
 #define HRMR(halfrow) _HRMR(halfrow)
-#define _HRML(k1, k2, k3, k4, k5)  HML5(k1), HML4(k2), HML3(k3), HML2(k4),         k5
-#define _HRMR(k1, k2, k3, k4, k5)          k1, HMR2(k2), HMR3(k3), HMR4(k4), HMR5(k5)
+#define _HRML(k1, k2, k3, k4, k5)  HML5(k1), HML4(k2), HML3(k3), HML2(k4), HML1(k5)
+#define _HRMR(k1, k2, k3, k4, k5)  HMR1(k1), HMR2(k2), HMR3(k3), HMR4(k4), HMR5(k5)
 #define BRML(halfrow) _BRML(halfrow)
 #define BRMR(halfrow) _BRMR(halfrow)
 #define _BRML(k1, k2, k3, k4, k5)  HML5(k1), k2, k3, k4, k5
