@@ -32,7 +32,7 @@ typedef struct
     bool     bottoming_configured;
     int16_t  actuation_offset;
     int16_t  release_offset;
-    int16_t  idle[MATRIX_ROWS][MATRIX_COLS];
+    int16_t  idle[EC_MATRIX_ROWS][EC_MATRIX_COLS];
     uint16_t bottoming[EC_MATRIX_ROWS][EC_MATRIX_COLS];
 } ecsm_config_t;
 

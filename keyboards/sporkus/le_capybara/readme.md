@@ -69,3 +69,24 @@ The capacitance response isn't linear - a default gamma curve is applied to
 #define TRAVEL_CURVE_GAMMA 2.0f    // power curve for actuation: >1 linearises EC's nonlinear capacitance response; 1.0 = linear
 ```
 
+
+## Porting to other keyboards
+
+**Copy verbatim** (no board-specific content):
+- `ec_switch_matrix.c`
+- `ec_switch_matrix.h`
+- `matrix.c`
+
+**Adapt** (copy and adjust board-specific values):
+- `config.h` - keep all EC tuning constants as-is; update pin config (`EC_MATRIX_ROW_PINS`, `EC_MATRIX_COL_CHANNELS`, `MUX_SEL_PINS`, `MUX_EN_PINS`, `DISCHARGE_PIN`, `ANALOG_PORT`) and matrix dimensions for your board; `EECONFIG_KB_DATA_SIZE = (6 + EC_MATRIX_ROWS * EC_MATRIX_COLS * 4)` stays correct if you use the same macro names
+- `[keyboard].h` - EC keycodes (`EC_AP_I`, `EC_AP_D`, `EC_TUI`, `EC_CAL`, `EC_CLR`)
+- `[keyboard].c` - adapt from `le_capybara.c`: includes the HID command block (`ec_hid_cmd`, `raw_hid_receive`/`raw_hid_receive_kb`), all EC keycode cases in `process_record_kb`, and `keyboard_post_init_kb` for `ECSM_TUNE_ON_BOOT`
+- `rules.mk` - add:
+  ```makefile
+  CUSTOM_MATRIX = lite
+  SRC += matrix.c analog.c ec_switch_matrix.c
+  RAW_ENABLE = yes
+  ```
+
+**Reference** (MCU-specific, verify don't blindly copy):
+- `halconf.h` / `mcuconf.h` - ADC peripheral must be enabled; verify HAL config matches your MCU

@@ -19,6 +19,7 @@
 #include "matrix.h"
 #include "print.h"
 
+#ifdef EXTRA_SWITCHES
 const uint32_t extra_switch_pins[] =  EXTRA_SWITCH_PINS;
 
 void extra_switch_init(void) {
@@ -53,6 +54,15 @@ bool extra_switches_scan(matrix_row_t current_matrix[]) {
 bool matrix_scan_custom(matrix_row_t current_matrix[]) {
     bool updated = ecsm_matrix_scan(current_matrix);
     updated |= extra_switches_scan(current_matrix);
+
+#else
+void matrix_init_custom(void) {
+    ecsm_init();
+}
+
+bool matrix_scan_custom(matrix_row_t current_matrix[]) {
+    bool updated = ecsm_matrix_scan(current_matrix);
+#endif
 
 #ifdef CONSOLE_ENABLE
     #ifdef ECSM_DEBUG
